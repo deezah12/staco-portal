@@ -44,6 +44,7 @@ public class User {
     @Column(nullable = false)
     private ApprovalLevel approvalLevel = ApprovalLevel.NONE;
 
+
     /**
      * Employee grade — used for guarantor eligibility.
      * Guarantor must have a higher grade.level than the loan applicant.
