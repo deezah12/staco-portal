@@ -14,7 +14,7 @@
     <groupId>com.statco</groupId>
     <artifactId>leave-management</artifactId>
     <version>1.0.0</version>
-    <name>Statco Leave Management</name>
+    <name>Staco Leave Management</name>
 
     <properties>
         <java.version>17</java.version>
