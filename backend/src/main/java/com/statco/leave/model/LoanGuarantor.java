@@ -1,0 +1,43 @@
+package com.statco.leave.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@Entity
+@Table(name = "loan_guarantors")
+public class LoanGuarantor {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loan_request_id", nullable = false)
+    private LoanRequest loanRequest;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "guarantor_user_id", nullable = false)
+    private User guarantor;
+
+    private int slotNumber; // 1 or 2
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GuarantorStatus status = GuarantorStatus.PENDING;
+
+    private String comment;
+    private LocalDateTime respondedAt;
+
+    @Column(nullable = false)
+    private LocalDateTime invitedAt = LocalDateTime.now();
+
+    public enum GuarantorStatus {
+        PENDING,  // Awaiting in-app response
+        SIGNED,   // Accepted in-app
+        DECLINED  // Declined in-app
+    }
+}
