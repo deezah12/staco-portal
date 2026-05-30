@@ -82,6 +82,10 @@ public class User {
     @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private LeaveBalance leaveBalance;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    private User manager;
+
     public enum Role {
         EMPLOYEE,
         ACCOUNT,  // Accounts dept — processes leave payments and loan disbursements
