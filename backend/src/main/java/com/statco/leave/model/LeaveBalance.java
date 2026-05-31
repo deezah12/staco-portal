@@ -20,7 +20,6 @@ public class LeaveBalance {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password"})
     private User employee;
 
-
     // Annual Leave
     private int annualTotal = 21;
     private int annualUsed = 0;
