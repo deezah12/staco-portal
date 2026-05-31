@@ -1,5 +1,6 @@
 package com.statco.leave.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,10 +18,6 @@ public class LoanRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id", nullable = false)
-    private User employee;
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
@@ -44,12 +41,25 @@ public class LoanRequest {
     @Column(nullable = false)
     private LoanStatus status = LoanStatus.PENDING_GUARANTORS;
 
-    // -------------------------------------------------------
-    // Level 1: Unit Head
-    // -------------------------------------------------------
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_head_id")
+    @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password"})
+    private User employee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_head_reviewer_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password"})
     private User unitHeadReviewer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "div_head_reviewer_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password"})
+    private User divHeadReviewer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hr_processor_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password"})
+    private User hrProcessor;
 
     private String unitHeadComment;
     private LocalDateTime unitHeadReviewedAt;
@@ -57,13 +67,6 @@ public class LoanRequest {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApprovalStatus unitHeadStatus = ApprovalStatus.PENDING;
-
-    // -------------------------------------------------------
-    // Level 2: Div Head
-    // -------------------------------------------------------
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "div_head_id")
-    private User divHeadReviewer;
 
     private String divHeadComment;
     private LocalDateTime divHeadReviewedAt;
@@ -85,13 +88,6 @@ public class LoanRequest {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApprovalStatus mdStatus = ApprovalStatus.PENDING;
-
-    // -------------------------------------------------------
-    // HR Processing
-    // -------------------------------------------------------
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "hr_processor_id")
-    private User hrProcessor;
 
     private String hrComment;
     private LocalDateTime hrProcessedAt;

@@ -1,5 +1,6 @@
 package com.statco.leave.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +17,9 @@ public class LeaveBalance {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password"})
     private User employee;
+
 
     // Annual Leave
     private int annualTotal = 21;
