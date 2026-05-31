@@ -1,6 +1,7 @@
 package com.statco.leave.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "loan_guarantors")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class LoanGuarantor {
 
     @Id
@@ -22,8 +24,8 @@ public class LoanGuarantor {
     @JoinColumn(name = "loan_request_id", nullable = false)
     private LoanRequest loanRequest;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "guarantor_user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "guarantor_user_id", nullable = false)
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "leaveRequests", "leaveBalance", "password" })
     private User guarantor;
 
     private int slotNumber;
