@@ -1,8 +1,10 @@
 package com.statco.leave.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -15,6 +17,7 @@ public class LoanGuarantor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_request_id", nullable = false)
     private LoanRequest loanRequest;
@@ -23,7 +26,7 @@ public class LoanGuarantor {
     @JoinColumn(name = "guarantor_user_id", nullable = false)
     private User guarantor;
 
-    private int slotNumber; // 1 or 2
+    private int slotNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -36,8 +39,6 @@ public class LoanGuarantor {
     private LocalDateTime invitedAt = LocalDateTime.now();
 
     public enum GuarantorStatus {
-        PENDING,  // Awaiting in-app response
-        SIGNED,   // Accepted in-app
-        DECLINED  // Declined in-app
+        PENDING, SIGNED, DECLINED
     }
 }
