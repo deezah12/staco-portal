@@ -10,7 +10,8 @@ import java.util.Optional;
 
 public interface LoanRequestRepository extends JpaRepository<LoanRequest, Long> {
 
-    List<LoanRequest> findByEmployeeOrderByCreatedAtDesc(User employee);
+    @Query("SELECT l FROM LoanRequest l WHERE l.employee.id = :employeeId ORDER BY l.createdAt DESC")
+    List<LoanRequest> findByEmployeeIdOrderByCreatedAtDesc(@Param("employeeId") Long employeeId);
     List<LoanRequest> findByStatusOrderByCreatedAtDesc(LoanRequest.LoanStatus status);
     List<LoanRequest> findAllByOrderByCreatedAtDesc();
 

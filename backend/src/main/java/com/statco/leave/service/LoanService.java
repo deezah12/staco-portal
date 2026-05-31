@@ -458,7 +458,7 @@ public class LoanService {
     // -------------------------------------------------------
 
     public List<LoanRequest> getMyLoans(User employee) {
-        return loanRepo.findByEmployeeOrderByCreatedAtDesc(employee);
+        return loanRepo.findByEmployeeIdOrderByCreatedAtDesc(employee.getId());
     }
 
     public List<LoanGuarantor> getMyGuarantorRequests(User user) {
