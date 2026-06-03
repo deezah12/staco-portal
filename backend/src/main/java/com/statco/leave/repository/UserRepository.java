@@ -27,4 +27,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findActiveUsersWithHigherGrade(@Param("gradeLevel") int gradeLevel, @Param("excludeId") Long excludeId);
 
     List<User> findByActiveTrueAndIdNot(Long excludeId);
+
+    /** Fetches all users with their grade loaded — avoids lazy-proxy serialization errors. */
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.grade ORDER BY u.createdAt DESC")
+    List<User> findAllWithGrade();
 }

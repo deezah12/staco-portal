@@ -90,14 +90,14 @@ public class User {
 
     public enum Role {
         EMPLOYEE,
-        ACCOUNT,  // Accounts dept — processes leave payments and loan disbursements
-        ADMIN     // HR — processes leave and loans, manages staff bio
+        ACCOUNT,
+        ADMIN
     }
 
     public enum ApprovalLevel {
-        NONE,       // Regular employee
-        UNIT_HEAD,  // Level 1 approver (per dept)
-        DIV_HEAD,   // Level 2 approver (per dept)
-        MD          // Managing Director — final loan approver (company-wide)
+        NONE,
+        UNIT_HEAD,
+        DIV_HEAD,
+        MD
     }
 }

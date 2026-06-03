@@ -1,5 +1,6 @@
 package com.statco.leave.controller;
 
+import com.statco.leave.dto.Dto;
 import com.statco.leave.dto.PerformanceDto;
 import com.statco.leave.model.User;
 import com.statco.leave.repository.UserRepository;
@@ -10,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/performance")
@@ -55,7 +58,11 @@ public class PerformanceController {
     @GetMapping("/admin/employees")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> employees() {
-        return ResponseEntity.ok(userRepo.findByActiveTrue());
+        return ResponseEntity.ok(
+            userRepo.findByActiveTrue().stream()
+                .map(Dto.UserDto::from)
+                .collect(Collectors.toList())
+        );
     }
 
     @GetMapping("/admin/periods")

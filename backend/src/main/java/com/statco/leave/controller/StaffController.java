@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/staff")
@@ -58,14 +59,17 @@ public class StaffController {
         balance.setEmployee(saved);
         balanceRepo.save(balance);
 
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(Dto.UserDto.from(saved));
     }
 
     // ── Admin: list all staff ──────────────────────────────────
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllStaff() {
-        return ResponseEntity.ok(userRepo.findAll());
+        List<Dto.UserDto> result = userRepo.findAllWithGrade().stream()
+                .map(Dto.UserDto::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     // ── Admin: assign grade to staff ──────────────────────────
@@ -82,7 +86,7 @@ public class StaffController {
                     .orElseThrow(() -> new RuntimeException("Grade not found"));
             user.setGrade(grade);
         }
-        return ResponseEntity.ok(userRepo.save(user));
+        return ResponseEntity.ok(Dto.UserDto.from(userRepo.save(user)));
     }
 
     // ── Admin: deactivate/activate staff ─────────────────────
@@ -92,7 +96,7 @@ public class StaffController {
         User user = userRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setActive(!user.isActive());
-        return ResponseEntity.ok(userRepo.save(user));
+        return ResponseEntity.ok(Dto.UserDto.from(userRepo.save(user)));
     }
 
     // ── Admin: reset staff password ───────────────────────────
@@ -147,13 +151,14 @@ public class StaffController {
         if (req.getPhone() != null)
             user.setPhone(req.getPhone());
 
-        return ResponseEntity.ok(userRepo.save(user));
+        return ResponseEntity.ok(Dto.UserDto.from(userRepo.save(user)));
     }
 
     // ── Staff: get own profile ─────────────────────────────────
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(Authentication auth) {
-        return ResponseEntity.ok(userRepo.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found")));
+        User user = userRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(Dto.UserDto.from(user));
     }
 }
