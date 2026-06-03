@@ -1,9 +1,14 @@
 package com.statco.leave.dto;
 
+import com.statco.leave.model.Grade;
+import com.statco.leave.model.LoanGuarantor;
+import com.statco.leave.model.LoanRequest;
+import com.statco.leave.model.User;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class LoanDto {
 
@@ -39,6 +44,55 @@ public class LoanDto {
         private boolean accept; // true = sign, false = decline
         @Size(max = 500)
         private String comment;
+    }
+
+    public record UserSummary(
+            Long id,
+            String fullName,
+            String department,
+            Grade grade
+    ) {
+        public static UserSummary from(User user) {
+            if (user == null) return null;
+            return new UserSummary(user.getId(), user.getFullName(), user.getDepartment(), user.getGrade());
+        }
+    }
+
+    public record LoanGuarantorResponse(
+            Long id,
+            Long loanRequestId,
+            UserSummary guarantor,
+            UserSummary employee,
+            BigDecimal amount,
+            BigDecimal monthlyDeduction,
+            int repaymentMonths,
+            String reason,
+            String purpose,
+            int slotNumber,
+            LoanGuarantor.GuarantorStatus status,
+            String comment,
+            LocalDateTime respondedAt,
+            LocalDateTime invitedAt
+    ) {
+        public static LoanGuarantorResponse from(LoanGuarantor guarantor) {
+            LoanRequest loan = guarantor.getLoanRequest();
+            return new LoanGuarantorResponse(
+                    guarantor.getId(),
+                    loan.getId(),
+                    UserSummary.from(guarantor.getGuarantor()),
+                    UserSummary.from(loan.getEmployee()),
+                    loan.getAmount(),
+                    loan.getMonthlyDeduction(),
+                    loan.getRepaymentMonths(),
+                    loan.getReason(),
+                    loan.getPurpose(),
+                    guarantor.getSlotNumber(),
+                    guarantor.getStatus(),
+                    guarantor.getComment(),
+                    guarantor.getRespondedAt(),
+                    guarantor.getInvitedAt()
+            );
+        }
     }
 
     /** Unit Head or Div Head loan approval */
