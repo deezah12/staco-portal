@@ -83,19 +83,19 @@ public class LeaveController {
     // -------------------------------------------------------
 
     @GetMapping("/hr/pending")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> pendingHr() {
         return ResponseEntity.ok(leaveService.getPendingHr());
     }
 
     @GetMapping("/hr/all")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> allRequests() {
         return ResponseEntity.ok(leaveService.getAllRequests());
     }
 
     @PostMapping("/hr/{id}/process")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> hrProcess(
             @PathVariable Long id,
             @Valid @RequestBody Dto.HrProcessRequest dto,
@@ -104,19 +104,19 @@ public class LeaveController {
     }
 
     @PostMapping("/hr/{id}/confirm-resumption")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> hrConfirmResumption(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(leaveService.confirmResumptionByHr(id, getUser(auth)));
     }
 
     @GetMapping("/hr/overstayed")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> overstayed() {
         return ResponseEntity.ok(leaveService.getOverstayedLeaves());
     }
 
     @GetMapping("/hr/stats")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> stats() {
         return ResponseEntity.ok(leaveService.getDashboardStats());
     }
@@ -135,13 +135,13 @@ public class LeaveController {
     // -------------------------------------------------------
 
     @GetMapping("/accounts/payment-requests")
-    @PreAuthorize("hasRole('ACCOUNT') or hasAuthority('ACCOUNT')")
+    @PreAuthorize("hasRole('ACCOUNT')")
     public ResponseEntity<?> pendingPayments() {
         return ResponseEntity.ok(leaveService.getPendingPayments());
     }
 
     @PostMapping(value = "/accounts/payment-requests/{id}/process-eop", consumes = "multipart/form-data")
-    @PreAuthorize("hasRole('ACCOUNT') or hasAuthority('ACCOUNT')")
+    @PreAuthorize("hasRole('ACCOUNT')")
     public ResponseEntity<?> processEop(
             @PathVariable Long id,
             @RequestPart("data") @Valid Dto.EopProcessRequest dto,
