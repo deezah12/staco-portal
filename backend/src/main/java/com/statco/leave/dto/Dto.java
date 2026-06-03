@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class Dto {
 
@@ -187,5 +188,61 @@ public class Dto {
         @Size(max = 500)
         private String accountNote;
         // eopDocument file is sent as MultipartFile alongside this DTO
+    }
+
+    // -------------------------------------------------------
+    // User / Staff response — safe, proxy-free projection
+    // -------------------------------------------------------
+
+    @Data
+    public static class UserDto {
+        private Long id;
+        private String fullName;
+        private String email;
+        private String department;
+        private String position;
+        private String phone;
+        private String role;
+        private String approvalLevel;
+        private boolean active;
+        private boolean mustChangePassword;
+        private BigDecimal leaveAllowanceAmount;
+        private int sickLeaveTotal;
+        private LocalDateTime createdAt;
+        private GradeInfo grade;
+
+        @Data
+        public static class GradeInfo {
+            private Long id;
+            private String name;
+            private int level;
+            private String description;
+        }
+
+        public static UserDto from(User user) {
+            UserDto dto = new UserDto();
+            dto.id = user.getId();
+            dto.fullName = user.getFullName();
+            dto.email = user.getEmail();
+            dto.department = user.getDepartment();
+            dto.position = user.getPosition();
+            dto.phone = user.getPhone();
+            dto.role = user.getRole().name();
+            dto.approvalLevel = user.getApprovalLevel().name();
+            dto.active = user.isActive();
+            dto.mustChangePassword = user.isMustChangePassword();
+            dto.leaveAllowanceAmount = user.getLeaveAllowanceAmount();
+            dto.sickLeaveTotal = user.getSickLeaveTotal();
+            dto.createdAt = user.getCreatedAt();
+            if (user.getGrade() != null) {
+                GradeInfo g = new GradeInfo();
+                g.id = user.getGrade().getId();
+                g.name = user.getGrade().getName();
+                g.level = user.getGrade().getLevel();
+                g.description = user.getGrade().getDescription();
+                dto.grade = g;
+            }
+            return dto;
+        }
     }
 }

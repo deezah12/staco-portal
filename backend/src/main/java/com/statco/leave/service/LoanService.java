@@ -537,6 +537,19 @@ public class LoanService {
         return gradeRepo.findAllByOrderByLevelAsc();
     }
 
+    public void deleteGrade(Long id) {
+        Grade grade = gradeRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Grade not found"));
+        // Clear grade from any staff who have it assigned
+        userRepo.findAll().forEach(u -> {
+            if (u.getGrade() != null && u.getGrade().getId().equals(id)) {
+                u.setGrade(null);
+                userRepo.save(u);
+            }
+        });
+        gradeRepo.delete(grade);
+    }
+
     // -------------------------------------------------------
     // PRIVATE HELPERS
     // -------------------------------------------------------

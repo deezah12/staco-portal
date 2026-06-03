@@ -180,4 +180,11 @@ public class LoanController {
     public ResponseEntity<?> createGrade(@Valid @RequestBody LoanDto.GradeRequest dto) {
         return ResponseEntity.ok(loanService.createGrade(dto));
     }
+
+    @DeleteMapping("/grades/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteGrade(@PathVariable Long id) {
+        loanService.deleteGrade(id);
+        return ResponseEntity.ok("Grade deleted");
+    }
 }
