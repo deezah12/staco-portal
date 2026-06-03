@@ -19,6 +19,7 @@
     "date-fns": "^4.1.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
+    "lucide-react": "^1.17.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hot-toast": "^2.6.0",
@@ -31,7 +32,7 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "serve -s build -l $PORT",
+    "start": "react-scripts start",
     "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

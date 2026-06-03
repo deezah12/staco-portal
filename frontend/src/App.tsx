@@ -7,10 +7,7 @@ import LoginPage from './pages/LoginPage';
 
 // Employee
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
-import ApplyLeave from './pages/employee/ApplyLeave';
-import MyRequests from './pages/employee/MyRequests';
-import BalancePage from './pages/employee/BalancePage';
-import ApplyLoan from './pages/employee/ApplyLoan';
+import LeaveRequests from './pages/employee/LeaveRequests';
 import MyLoans from './pages/employee/MyLoans';
 import RepaymentSchedule from './pages/employee/RepaymentSchedule';
 import EmployeePerformance from './pages/employee/EmployeePerformance';
@@ -41,77 +38,82 @@ import ProfilePage from './pages/Profilepage';
 import ChangePassword from './pages/Changepassword';
 
 const ProtectedRoute = ({ children, adminOnly = false, accountOnly = false }:
-  { children: React.ReactNode; adminOnly?: boolean; accountOnly?: boolean }) => {
-  const { user, isAdmin, isAccount } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
-  if (adminOnly && !isAdmin) return <Navigate to="/employee/dashboard" replace />;
-  if (accountOnly && !isAccount) return <Navigate to="/employee/dashboard" replace />;
-  return <>{children}</>;
+                        { children: React.ReactNode; adminOnly?: boolean; accountOnly?: boolean }) => {
+    const { user, isAdmin, isAccount } = useAuth();
+    if (!user) return <Navigate to="/login" replace />;
+    if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
+    if (adminOnly && !isAdmin) return <Navigate to="/employee/dashboard" replace />;
+    if (accountOnly && !isAccount) return <Navigate to="/employee/dashboard" replace />;
+    return <>{children}</>;
 };
 
 const AppRoutes = () => {
-  const { user, isAdmin, isAccount } = useAuth();
-  const defaultRoute = !user ? '/login'
-    : user.mustChangePassword ? '/change-password'
-    : isAdmin ? '/admin/dashboard'
-    : isAccount ? '/accounts/payments'
-    : '/employee/dashboard';
+    const { user, isAdmin, isAccount } = useAuth();
+    const defaultRoute = !user ? '/login'
+        : user.mustChangePassword ? '/change-password'
+            : isAdmin ? '/admin/dashboard'
+                : isAccount ? '/accounts/payments'
+                    : '/employee/dashboard';
 
-  return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to={defaultRoute} replace /> : <LoginPage />} />
-      <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/login" replace />} />
+    return (
+        <Routes>
+            <Route path="/login" element={user ? <Navigate to={defaultRoute} replace /> : <LoginPage />} />
+            <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/login" replace />} />
 
-      {/* Authenticated routes */}
-      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/profile" element={<ProfilePage />} />
+            {/* Authenticated routes */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/profile" element={<ProfilePage />} />
 
-        {/* Employee + Approvers */}
-        <Route path="/employee/dashboard"          element={<EmployeeDashboard />} />
-        <Route path="/employee/apply"              element={<ApplyLeave />} />
-        <Route path="/employee/requests"           element={<MyRequests />} />
-        <Route path="/employee/balance"            element={<BalancePage />} />
-        <Route path="/employee/loans"              element={<MyLoans />} />
-        <Route path="/employee/loans/apply"        element={<ApplyLoan />} />
-        <Route path="/employee/loans/:id/schedule" element={<RepaymentSchedule />} />
-        <Route path="/employee/performance"        element={<EmployeePerformance />} />
-        <Route path="/employee/guarantor-requests" element={<GuarantorRequests />} />
-        <Route path="/manager/performance"         element={<ManagerPerformance />} />
+                {/* Employee + Approvers */}
+                <Route path="/employee/dashboard"          element={<EmployeeDashboard />} />
 
-        {/* Approver routes */}
-        <Route path="/approver/pending" element={<ApproverPending />} />
-        <Route path="/approver/loans"   element={<ApproverLoans />} />
-      </Route>
+                {/* Leave — combined list + apply */}
+                <Route path="/employee/requests"           element={<LeaveRequests />} />
+                <Route path="/employee/apply"              element={<Navigate to="/employee/requests" replace />} />
 
-      {/* HR / Admin routes */}
-      <Route element={<ProtectedRoute adminOnly><Layout /></ProtectedRoute>}>
-        <Route path="/admin/dashboard"     element={<AdminDashboard />} />
-        <Route path="/admin/requests"      element={<AllRequests />} />
-        <Route path="/admin/leave-process" element={<HrProcessLeave />} />
-        <Route path="/admin/loans"         element={<AdminLoans />} />
-        <Route path="/admin/performance"   element={<AdminPerformance />} />
-        <Route path="/admin/reports"       element={<AdminReports />} />
-        <Route path="/admin/staff"         element={<StaffManagement />} />
-      </Route>
+                {/* Loans — combined list + apply */}
+                <Route path="/employee/loans"              element={<MyLoans />} />
+                <Route path="/employee/loans/apply"        element={<Navigate to="/employee/loans" replace />} />
 
-      {/* Accounts routes */}
-      <Route element={<ProtectedRoute accountOnly><Layout /></ProtectedRoute>}>
-        <Route path="/accounts/payments" element={<AccountsPayments />} />
-        <Route path="/accounts/loans"    element={<AccountsLoans />} />
-      </Route>
+                <Route path="/employee/loans/:id/schedule" element={<RepaymentSchedule />} />
+                <Route path="/employee/performance"        element={<EmployeePerformance />} />
+                <Route path="/employee/guarantor-requests" element={<GuarantorRequests />} />
+                <Route path="/manager/performance"         element={<ManagerPerformance />} />
 
-      <Route path="*" element={<Navigate to={defaultRoute} replace />} />
-    </Routes>
-  );
+                {/* Approver routes */}
+                <Route path="/approver/pending" element={<ApproverPending />} />
+                <Route path="/approver/loans"   element={<ApproverLoans />} />
+            </Route>
+
+            {/* HR / Admin routes */}
+            <Route element={<ProtectedRoute adminOnly><Layout /></ProtectedRoute>}>
+                <Route path="/admin/dashboard"     element={<AdminDashboard />} />
+                <Route path="/admin/requests"      element={<AllRequests />} />
+                <Route path="/admin/leave-process" element={<HrProcessLeave />} />
+                <Route path="/admin/loans"         element={<AdminLoans />} />
+                <Route path="/admin/performance"   element={<AdminPerformance />} />
+                <Route path="/admin/reports"       element={<AdminReports />} />
+                <Route path="/admin/staff"         element={<StaffManagement />} />
+            </Route>
+
+            {/* Accounts routes */}
+            <Route element={<ProtectedRoute accountOnly><Layout /></ProtectedRoute>}>
+                <Route path="/accounts/payments" element={<AccountsPayments />} />
+                <Route path="/accounts/loans"    element={<AccountsLoans />} />
+            </Route>
+
+            <Route path="*" element={<Navigate to={defaultRoute} replace />} />
+        </Routes>
+    );
 };
 
 const App = () => (
-  <AuthProvider>
-    <BrowserRouter>
-      <Toaster position="top-right" toastOptions={{ duration: 3000, style: { fontSize: 14, borderRadius: 8 } }} />
-      <AppRoutes />
-    </BrowserRouter>
-  </AuthProvider>
+    <AuthProvider>
+        <BrowserRouter>
+            <Toaster position="top-right" toastOptions={{ duration: 3000, style: { fontSize: 14, borderRadius: 8 } }} />
+            <AppRoutes />
+        </BrowserRouter>
+    </AuthProvider>
 );
+
 export default App;

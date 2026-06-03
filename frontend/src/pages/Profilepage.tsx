@@ -2,24 +2,28 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { getProfile, updateProfile } from '../api/staffApi';
+import { getMyBalance } from '../api/leaveApi';
 import { useAuth } from '../context/AuthContext';
 
 const ProfilePage: React.FC = () => {
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<any>(null);
+    const [balance, setBalance] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [phone, setPhone] = useState('');
 
     useEffect(() => {
-        getProfile().then((res) => {
-            setProfile(res.data);
-            setPhone(res.data.phone || '');
-            console.log('Profile data:', res.data);
-            console.log('Manager:', res.data.manager);
-            console.log('Grade:', res.data.grade);
-        }).finally(() => setLoading(false));
+        Promise.all([getProfile(), getMyBalance()])
+            .then(([profileRes, balanceRes]) => {
+                setProfile(profileRes.data);
+                setPhone(profileRes.data.phone || '');
+                setBalance(balanceRes.data);
+                console.log('Profile:', profileRes.data);
+                console.log('Balance:', balanceRes.data);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     const handleSavePhone = async () => {
@@ -84,27 +88,16 @@ const ProfilePage: React.FC = () => {
         </div>
     );
 
+
+
     return (
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 8px 48px' }}>
-
-            {/* HEADER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>My Profile</h1>
-                    <p style={{ color: '#64748b', fontSize: 14 }}>Manage your personal information and account settings</p>
-                </div>
-                <button onClick={() => navigate('/change-password')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                    🔑 Change Password
-                </button>
-            </div>
 
             {/* HERO CARD */}
             <div style={{ ...card, marginBottom: 20, padding: '24px 28px', background: 'linear-gradient(135deg,#ffffff 0%,#f5f3ff 100%)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
-
-                    {/* Avatar + name + meta */}
                     <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <div style={{ flexShrink: 0 }}>
                             <div style={{ width: 96, height: 96, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 34, fontWeight: 800, boxShadow: '0 6px 20px rgba(124,58,237,0.18)' }}>
                                 {initials}
                             </div>
@@ -112,15 +105,12 @@ const ProfilePage: React.FC = () => {
                         <div>
                             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', marginBottom: 2 }}>{profile?.fullName}</h2>
                             <div style={{ color: '#7c3aed', fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{profile?.department}{positionDisplay ? ` · ${positionDisplay}` : ''}</div>
-
-                            {/* Grade — single badge, hero only */}
                             {profile?.grade && (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 999, background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 600, border: '1px solid #bbf7d0', marginBottom: 10 }}>
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                                     {profile.grade.name} · L{profile.grade.level}
                                 </span>
                             )}
-
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#475569', fontSize: 13 }}>
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -133,11 +123,8 @@ const ProfilePage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Badges + IDs */}
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12, alignItems: 'flex-end' }}>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                            {pill('#dbeafe', '#1d4ed8', `👤 ${profile?.role}`)}
                             {profile?.approvalLevel && profile.approvalLevel !== 'NONE' && pill('#fef3c7', '#d97706', `⭐ ${approvalLabelMap[profile.approvalLevel]}`)}
                             {pill(profile?.active ? '#dcfce7' : '#fee2e2', profile?.active ? '#16a34a' : '#dc2626', profile?.active ? '● Active' : '○ Inactive')}
                         </div>
@@ -156,27 +143,6 @@ const ProfilePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* STATS */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
-                {([
-                    { bg: '#dcfce7', ic: '#16a34a', path: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', label: 'Leave Balance', value: `${profile?.leaveAllowanceAmount ?? 0}`, sub: 'days available' },
-                    { bg: '#dbeafe', ic: '#2563eb', path: 'M22 12h-4l-3 9L9 3l-3 9H2', label: 'Sick Leave', value: `${profile?.sickLeaveTotal ?? 0}`, sub: 'days total' },
-                    { bg: '#ede9fe', ic: '#7c3aed', path: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', label: 'Approval Level', value: approvalLabelMap[profile?.approvalLevel] || 'None', sub: 'access level' },
-                    { bg: profile?.active ? '#dcfce7' : '#fee2e2', ic: profile?.active ? '#16a34a' : '#dc2626', path: 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3', label: 'Account Status', value: profile?.active ? 'Active' : 'Inactive', sub: 'account state' },
-                ] as any[]).map((s, i) => (
-                    <div key={i} style={{ ...card, display: 'flex', alignItems: 'center', gap: 14, padding: 18 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={s.ic} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={s.path}/></svg>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, marginBottom: 1 }}>{s.label}</div>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: s.ic, lineHeight: 1 }}>{s.value}</div>
-                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{s.sub}</div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
             {/* BOTTOM GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 20 }}>
 
@@ -192,7 +158,6 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </div>
                     <div style={{ height: 1, background: '#f1f5f9', marginBottom: 16 }} />
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                         {([
                             { label: 'Full Name', value: profile?.fullName || '', editable: false },
@@ -219,7 +184,6 @@ const ProfilePage: React.FC = () => {
                             </div>
                         ))}
                     </div>
-
                     <div style={{ display: 'flex', gap: 10 }}>
                         <button onClick={handleSavePhone} disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 12, background: saving ? '#a78bfa' : '#7c3aed', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -265,11 +229,7 @@ const ProfilePage: React.FC = () => {
                             </div>
                             : <span style={{ color: '#94a3b8' }}>Not assigned</span>
                     )}
-                    {infoRow('M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3', 'Status', pill(profile?.active ? '#dcfce7' : '#fee2e2', profile?.active ? '#16a34a' : '#dc2626', profile?.active ? 'Active' : 'Inactive'))}
-                    {infoRow('M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'Date Created', <span style={{ color: '#475569' }}>{createdAt}</span>)}
-                    {infoRow('M12 22s-8-4-8-10V5l8-3 8 3v7c0 6-8 10-8 10z', 'Must Change Password',
-                        profile?.mustChangePassword ? pill('#fee2e2', '#dc2626', 'Yes') : pill('#dcfce7', '#16a34a', 'No'), true
-                    )}
+
 
                     <div style={{ marginTop: 16, padding: 16, borderRadius: 14, background: 'linear-gradient(135deg,#f5f3ff,#eef2ff)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                         <div>

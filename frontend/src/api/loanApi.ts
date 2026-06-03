@@ -99,6 +99,10 @@ export const getAllGrades = () =>
 export const createGrade = (data: { name: string; level: number; description?: string }) =>
   api.post<Grade>('/loans/grades', data);
 
+export const deleteGrade = (id: number) =>
+    api.delete<void>(`/loans/grades/${id}`);
+
 // Legacy alias used in some admin pages
 export const getAllEmployees = () =>
   api.get<any[]>('/loans/eligible-guarantors');
+

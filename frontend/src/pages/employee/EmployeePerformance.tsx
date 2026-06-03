@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { getMyReviews, respondToAppraisal, getReviewScores, submitFeedback, getMyTraining, getMyDisciplinary, getFeedbackQuestions } from '../../api/performanceApi';
 import { PerformanceReview, CompetencyScore, TrainingRecord, DisciplinaryAction, FeedbackQuestion, COMPETENCY_LABELS, RECOMMENDATION_META, STATUS_META, TRAINING_STATUS_META } from '../../types/performance';
-
 const ScoreBar: React.FC<{ score: number }> = ({ score }) => {
   const colors = ['','#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
   return (
@@ -125,13 +124,278 @@ const EmployeePerformance: React.FC = () => {
     <div>
       <div className="page-header"><h1>My Performance</h1><p>Appraisals, training and disciplinary records</p></div>
 
-      <div style={{ display:'flex', gap:10, marginBottom:24 }}>
-        <TabBtn id="reviews"      label="Reviews"      badge={pending.length + feedback.length} />
-        <TabBtn id="training"     label="Training"     badge={training.filter(t => t.status === 'SCHEDULED').length || undefined} />
-        <TabBtn id="disciplinary" label="Disciplinary" badge={disciplinary.length || undefined} />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 18,
+          marginBottom: 28,
+        }}
+    >
+      {/* Overall Score */}
+      <div
+          style={{
+            background: '#fff',
+            borderRadius: 20,
+            padding: 22,
+            border: '1px solid #eef2f7',
+            boxShadow: '0 2px 12px rgba(15,23,42,0.03)',
+          }}
+      >
+        <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              background: '#f3f0ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              marginBottom: 14,
+            }}
+        >
+          ⭐
+        </div>
+
+        <div
+            style={{
+              fontSize: 13,
+              color: '#64748b',
+              marginBottom: 6,
+            }}
+        >
+          Overall Rating
+        </div>
+
+        <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              color: '#1e293b',
+            }}
+        >
+          {reviews.length > 0
+              ? (
+                  reviews.reduce(
+                      (acc, r) => acc + (r.finalScore || 0),
+                      0
+                  ) / reviews.length
+              ).toFixed(1)
+              : '0.0'}
+          <span
+              style={{
+                fontSize: 15,
+                color: '#94a3b8',
+                marginLeft: 4,
+              }}
+          >
+        /5.0
+      </span>
+        </div>
+
+        <div
+            style={{
+              marginTop: 10,
+              height: 8,
+              background: '#ede9fe',
+              borderRadius: 999,
+              overflow: 'hidden',
+            }}
+        >
+          <div
+              style={{
+                width: `${
+                    reviews.length > 0
+                        ? (reviews.reduce(
+                                (acc, r) => acc + (r.finalScore || 0),
+                                0
+                            ) /
+                            reviews.length /
+                            5) *
+                        100
+                        : 0
+                }%`,
+                height: '100%',
+                background: '#7c3aed',
+              }}
+          />
+        </div>
       </div>
 
-      {/* ── REVIEWS TAB ── */}
+      {/* Reviews */}
+      <div
+          style={{
+            background: '#fff',
+            borderRadius: 20,
+            padding: 22,
+            border: '1px solid #eef2f7',
+            boxShadow: '0 2px 12px rgba(15,23,42,0.03)',
+          }}
+      >
+        <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              background: '#eff6ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              marginBottom: 14,
+            }}
+        >
+          📊
+        </div>
+
+        <div
+            style={{
+              fontSize: 13,
+              color: '#64748b',
+              marginBottom: 6,
+            }}
+        >
+          Completed Reviews
+        </div>
+
+        <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              color: '#2563eb',
+            }}
+        >
+          {reviews.length}
+        </div>
+
+        <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              color: '#64748b',
+            }}
+        >
+          Performance appraisals completed
+        </div>
+      </div>
+
+      {/* Training */}
+      <div
+          style={{
+            background: '#fff',
+            borderRadius: 20,
+            padding: 22,
+            border: '1px solid #eef2f7',
+            boxShadow: '0 2px 12px rgba(15,23,42,0.03)',
+          }}
+      >
+        <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              background: '#ecfdf3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              marginBottom: 14,
+            }}
+        >
+          🎓
+        </div>
+
+        <div
+            style={{
+              fontSize: 13,
+              color: '#64748b',
+              marginBottom: 6,
+            }}
+        >
+          Trainings
+        </div>
+
+        <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              color: '#16a34a',
+            }}
+        >
+          {training.length}
+        </div>
+
+        <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              color: '#64748b',
+            }}
+        >
+          Training & development records
+        </div>
+      </div>
+
+      {/* Pending */}
+      <div
+          style={{
+            background: '#fff',
+            borderRadius: 20,
+            padding: 22,
+            border: '1px solid #eef2f7',
+            boxShadow: '0 2px 12px rgba(15,23,42,0.03)',
+          }}
+      >
+        <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              background: '#fff7ed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              marginBottom: 14,
+            }}
+        >
+          ⏳
+        </div>
+
+        <div
+            style={{
+              fontSize: 13,
+              color: '#64748b',
+              marginBottom: 6,
+            }}
+        >
+          Pending Actions
+        </div>
+
+        <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              color: '#ea580c',
+            }}
+        >
+          {pending.length + feedback.length}
+        </div>
+
+        <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              color: '#64748b',
+            }}
+        >
+          Reviews awaiting your response
+        </div>
+      </div>
+    </div>
+
+    {/* ── REVIEWS TAB ── */}
       {tab === 'reviews' && (<>
         {/* Action required banners */}
         {[...pending, ...feedback].length > 0 && (
