@@ -72,6 +72,14 @@ public class StaffController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ADMIN')")
+    public ResponseEntity<?> getStaffById(@PathVariable Long id) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(Dto.UserDto.from(user));
+    }
+
     // ── Admin: assign grade to staff ──────────────────────────
     @PutMapping("/admin/{id}/grade")
     @PreAuthorize("hasRole('ADMIN')")
