@@ -181,4 +181,13 @@ public class LeaveController {
             Authentication auth) {
         return ResponseEntity.ok(leaveService.processEop(id, getUser(auth), dto, eopDocument));
     }
+
+    @PostMapping(value = "/accounts/payment-requests/{id}/eop-document", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('ACCOUNT')")
+    public ResponseEntity<?> replaceEopDocument(
+            @PathVariable Long id,
+            @RequestPart("eopDocument") MultipartFile eopDocument,
+            Authentication auth) {
+        return ResponseEntity.ok(leaveService.replaceEopDocument(id, getUser(auth), eopDocument));
+    }
 }

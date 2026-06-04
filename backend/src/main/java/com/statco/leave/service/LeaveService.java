@@ -300,6 +300,30 @@ public class LeaveService {
         return paymentRepo.save(payment);
     }
 
+    @Transactional
+    public LeavePaymentRequest replaceEopDocument(Long paymentRequestId, User accountUser, MultipartFile eopDoc) {
+        if (accountUser.getRole() != User.Role.ACCOUNT) {
+            throw new RuntimeException("Only Accounts staff can upload EOP documents");
+        }
+        if (eopDoc == null || eopDoc.isEmpty()) {
+            throw new RuntimeException("Please upload the EOP document");
+        }
+
+        LeavePaymentRequest payment = paymentRepo.findById(paymentRequestId)
+                .orElseThrow(() -> new RuntimeException("Payment request not found"));
+
+        String filePath = saveFile(eopDoc, EOP_DIR);
+        payment.setEopDocumentPath(filePath);
+        payment.setEopDocumentFileName(eopDoc.getOriginalFilename());
+        payment.setProcessedByAccount(accountUser);
+        payment.setProcessedAt(LocalDateTime.now());
+        if (payment.getStatus() == LeavePaymentRequest.PaymentStatus.PENDING) {
+            payment.setStatus(LeavePaymentRequest.PaymentStatus.PROCESSED);
+        }
+
+        return paymentRepo.save(payment);
+    }
+
     // -------------------------------------------------------
     // EMPLOYEE: Cancel leave
     // -------------------------------------------------------

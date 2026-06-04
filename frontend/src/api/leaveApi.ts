@@ -108,3 +108,12 @@ export const processEop = (id: number, accountNote: string, eopDocument: File) =
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
 };
+
+export const replaceEopDocument = (id: number, eopDocument: File) => {
+  const form = new FormData();
+  form.append('eopDocument', eopDocument);
+  return api.post<LeavePaymentRequest>(
+    `/leave/accounts/payment-requests/${id}/eop-document`, form,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+};
