@@ -22,6 +22,7 @@ const EmployeeDashboard: React.FC = () => {
     const [balance, setBalance] = useState<LeaveBalance | null>(null);
     const [profile, setProfile] = useState<any>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -42,6 +43,11 @@ const EmployeeDashboard: React.FC = () => {
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
     const firstName = (profile?.fullName || user?.fullName || 'there').split(' ')[0];
+
+    const announcementPreview = (body: string) => {
+        const text = body.replace(/\s+/g, ' ').trim();
+        return text.length > 115 ? `${text.slice(0, 115)}...` : text;
+    };
 
     if (loading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -155,16 +161,25 @@ const EmployeeDashboard: React.FC = () => {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {announcements.slice(0, 3).map((a, i) => (
-                            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => setSelectedAnnouncement(a)}
+                                style={{ display: 'flex', gap: 12, alignItems: 'flex-start', width: '100%', padding: 0, border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer' }}
+                                title="View announcement details"
+                            >
                                 <div style={{ width: 40, height: 40, borderRadius: 12, background: a.pinned ? '#fef3c7' : '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                                     {a.pinned ? '📌' : '📢'}
                                 </div>
-                                <div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
                                     <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a', marginBottom: 2 }}>{a.title}</div>
-                                    <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 4 }}>{a.body}</div>
-                                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{format(new Date(a.createdAt), 'MMM d, yyyy')}</div>
+                                    <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 4 }}>{announcementPreview(a.body)}</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                                        <div style={{ fontSize: 12, color: '#94a3b8' }}>{format(new Date(a.createdAt), 'MMM d, yyyy')}</div>
+                                        <span style={{ fontSize: 12, color: '#7c3aed', fontWeight: 700, flexShrink: 0 }}>View</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                         {announcements.length === 0 && (
                             <div style={{ fontSize: 13, color: '#64748b' }}>No announcements at the moment.</div>
@@ -206,6 +221,31 @@ const EmployeeDashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {selectedAnnouncement && (
+                <div className="modal-overlay" onClick={() => setSelectedAnnouncement(null)}>
+                    <div className="modal" style={{ maxWidth: 560, maxHeight: '86vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>{selectedAnnouncement.title}</h2>
+                            <button className="modal-close" onClick={() => setSelectedAnnouncement(null)}>✕</button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                            {selectedAnnouncement.pinned && (
+                                <span style={{ background: '#fef3c7', color: '#b45309', borderRadius: 999, padding: '4px 9px', fontSize: 11, fontWeight: 800 }}>Pinned</span>
+                            )}
+                            <span style={{ background: '#ede9fe', color: '#7c3aed', borderRadius: 999, padding: '4px 9px', fontSize: 11, fontWeight: 800 }}>
+                                {selectedAnnouncement.department || 'All departments'}
+                            </span>
+                            <span style={{ color: '#64748b', fontSize: 12, padding: '4px 0' }}>
+                                {format(new Date(selectedAnnouncement.createdAt), 'MMM d, yyyy')}
+                            </span>
+                        </div>
+                        <div style={{ color: '#334155', fontSize: 14, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+                            {selectedAnnouncement.body}
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
