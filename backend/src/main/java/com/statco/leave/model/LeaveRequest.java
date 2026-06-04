@@ -1,5 +1,6 @@
 package com.statco.leave.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class LeaveRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User employee;
 
     @Enumerated(EnumType.STRING)
@@ -69,6 +71,7 @@ public class LeaveRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_head_reviewer_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User unitHeadReviewer;
 
     private String unitHeadComment;
@@ -83,6 +86,7 @@ public class LeaveRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "div_head_reviewer_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User divHeadReviewer;
 
     private String divHeadComment;
@@ -97,6 +101,7 @@ public class LeaveRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hr_processor_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User hrProcessor;
 
     private String hrComment;
