@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getPendingPayments, getPaymentHistory, processEop } from '../../api/leaveApi';
+import { getPendingPayments, getPaymentHistory, processEop, replaceEopDocument } from '../../api/leaveApi';
 import { LeavePaymentRequest } from '../../types';
 import { format } from 'date-fns';
 
@@ -9,6 +9,7 @@ const AccountsPayments: React.FC = () => {
   const [history, setHistory]   = useState<LeavePaymentRequest[]>([]);
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState<LeavePaymentRequest | null>(null);
+  const [replacing, setReplacing] = useState<LeavePaymentRequest | null>(null);
   const [eopFile, setEopFile]   = useState<File | null>(null);
   const [note, setNote]         = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +37,19 @@ const AccountsPayments: React.FC = () => {
       setSelected(null); setEopFile(null); setNote('');
     } catch (err: any) {
       const _d = err.response?.data; toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed to process EOP');
+    } finally { setSubmitting(false); }
+  };
+
+  const handleReplaceEop = async () => {
+    if (!replacing || !eopFile) { toast.error('Please upload the EOP document'); return; }
+    setSubmitting(true);
+    try {
+      await replaceEopDocument(replacing.id, eopFile);
+      await refreshQueues();
+      toast.success('EOP document updated');
+      setReplacing(null); setEopFile(null);
+    } catch (err: any) {
+      const _d = err.response?.data; toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed to update EOP');
     } finally { setSubmitting(false); }
   };
 
@@ -127,9 +141,14 @@ const AccountsPayments: React.FC = () => {
                   </div>
                   {p.accountNote && <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>Account Note: {p.accountNote}</div>}
                 </div>
-                <span style={{ padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: '#dcfce7', color: '#16a34a' }}>
-                  {p.status}
-                </span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <span style={{ padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: '#dcfce7', color: '#16a34a' }}>
+                    {p.status}
+                  </span>
+                  <button className="btn btn-outline btn-sm" onClick={() => { setReplacing(p); setEopFile(null); }}>
+                    Replace EOP
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -171,6 +190,41 @@ const AccountsPayments: React.FC = () => {
                 {submitting ? 'Processing...' : '✅ Submit EOP'}
               </button>
               <button className="btn btn-outline" onClick={() => setSelected(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {replacing && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Replace EOP — {replacing.employee.fullName}</h2>
+              <button className="modal-close" onClick={() => setReplacing(null)}>✕</button>
+            </div>
+            <div style={{ background: '#f8fafc', borderRadius: 8, padding: 14, marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: '#64748b' }}>Current document: {replacing.eopDocumentFileName || 'None'}</div>
+            </div>
+            <div className="form-group">
+              <label>Upload EOP Document <span style={{ color: '#ef4444' }}>*</span></label>
+              <div style={{ border: `2px dashed ${eopFile ? '#22c55e' : '#cbd5e1'}`,
+                borderRadius: 10, padding: '16px', textAlign: 'center',
+                background: eopFile ? '#f0fdf4' : '#f8fafc', cursor: 'pointer' }}>
+                <input type="file" id="replaceEopFile" accept=".pdf,.doc,.docx" style={{ display: 'none' }}
+                  onChange={e => setEopFile(e.target.files?.[0] || null)} />
+                <label htmlFor="replaceEopFile" style={{ cursor: 'pointer' }}>
+                  {eopFile
+                    ? <><div style={{ fontSize: 20 }}>📎</div><div style={{ fontWeight: 600, color: '#16a34a', fontSize: 13 }}>{eopFile.name}</div></>
+                    : <><div style={{ fontSize: 24 }}>📤</div><div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Click to upload replacement EOP</div></>
+                  }
+                </label>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-primary" onClick={handleReplaceEop} disabled={submitting || !eopFile}>
+                {submitting ? 'Updating...' : '✅ Update EOP'}
+              </button>
+              <button className="btn btn-outline" onClick={() => setReplacing(null)}>Cancel</button>
             </div>
           </div>
         </div>
