@@ -1,5 +1,7 @@
 package com.statco.leave.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,10 +24,12 @@ public class LeavePaymentRequest {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leave_request_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "employee", "unitHeadReviewer", "divHeadReviewer", "hrProcessor"})
     private LeaveRequest leaveRequest;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User employee;
 
     /**
@@ -42,6 +46,7 @@ public class LeavePaymentRequest {
     // HR fields
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_hr_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User createdByHr;
 
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -51,6 +56,7 @@ public class LeavePaymentRequest {
     // Accounts fields
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "processed_by_account_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "grade", "leaveRequests", "leaveBalance", "password"})
     private User processedByAccount;
 
     private LocalDateTime processedAt;
@@ -60,6 +66,7 @@ public class LeavePaymentRequest {
     /**
      * Path to the uploaded EOP (End of Period) document from Accounts.
      */
+    @JsonIgnore
     private String eopDocumentPath;
     private String eopDocumentFileName;
 
