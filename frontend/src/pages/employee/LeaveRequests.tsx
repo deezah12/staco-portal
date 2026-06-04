@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getMyRequests, cancelLeave, applyLeave, getMyBalance } from '../../api/leaveApi';
-import { LeaveRequest, LeaveBalance, LeaveType, leaveTypeLabel, statusLabel } from '../../types';
+import { getMyRequests, cancelLeave, applyLeave, getMyBalance, getLeavePayment, downloadLeavePaymentEop } from '../../api/leaveApi';
+import { LeaveRequest, LeaveBalance, LeavePaymentRequest, LeaveType, leaveTypeLabel, statusLabel } from '../../types';
 import { format, differenceInCalendarDays } from 'date-fns';
 
 const LEAVE_GROUPS = [
@@ -43,6 +43,9 @@ const LeaveRequests: React.FC = () => {
     const [balance, setBalance] = useState<LeaveBalance | null>(null);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<LeaveRequest | null>(null);
+    const [selectedPayment, setSelectedPayment] = useState<LeavePaymentRequest | null>(null);
+    const [paymentLoading, setPaymentLoading] = useState(false);
+    const [paymentError, setPaymentError] = useState('');
     const [showApply, setShowApply] = useState(false);
     const [tab, setTab] = useState<TabFilter>('ALL');
     const [submitting, setSubmitting] = useState(false);
@@ -57,6 +60,24 @@ const LeaveRequests: React.FC = () => {
             .then(([r, b]) => { setRequests(r.data); setBalance(b.data); })
             .finally(() => setLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (!selected?.paymentRequestSent) {
+            setSelectedPayment(null);
+            setPaymentError('');
+            return;
+        }
+        setPaymentLoading(true);
+        setPaymentError('');
+        getLeavePayment(selected.id)
+            .then(r => setSelectedPayment(r.data))
+            .catch((err: any) => {
+                const d = err.response?.data;
+                setSelectedPayment(null);
+                setPaymentError(typeof d === 'string' ? d : d?.error || 'Payment request details are not available yet.');
+            })
+            .finally(() => setPaymentLoading(false));
+    }, [selected]);
 
     const days = form.startDate && form.endDate
         ? differenceInCalendarDays(new Date(form.endDate), new Date(form.startDate)) + 1
@@ -90,6 +111,24 @@ const LeaveRequests: React.FC = () => {
             const d = err.response?.data;
             toast.error(typeof d === 'string' ? d : d?.error || 'Failed to submit');
         } finally { setSubmitting(false); }
+    };
+
+    const handleDownloadEop = async () => {
+        if (!selected) return;
+        try {
+            const res = await downloadLeavePaymentEop(selected.id);
+            const url = URL.createObjectURL(res.data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = selectedPayment?.eopDocumentFileName || 'eop-document';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (err: any) {
+            const d = err.response?.data;
+            toast.error(typeof d === 'string' ? d : d?.error || 'Failed to download EOP');
+        }
     };
 
     const filtered = requests.filter(r => {
@@ -472,6 +511,30 @@ const LeaveRequests: React.FC = () => {
                                     {selected.paymentApplicable && (
                                         <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, color: '#15803d' }}>
                                             💰 Annual leave allowance applicable — payment raised to Accounts
+                                        </div>
+                                    )}
+
+                                    {selected.paymentRequestSent && (
+                                        <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe', fontSize: 13, color: '#1d4ed8' }}>
+                                            <div style={{ fontWeight: 700, marginBottom: 4 }}>Payment Details</div>
+                                            {paymentLoading ? (
+                                                <div>Loading payment...</div>
+                                            ) : selectedPayment ? (
+                                                <>
+                                                    <div>Amount: <strong>₦{Number(selectedPayment.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong></div>
+                                                    <div>Status: <strong>{selectedPayment.status}</strong></div>
+                                                    {selectedPayment.processedAt && <div>Processed: {format(new Date(selectedPayment.processedAt), 'dd MMM yyyy')}</div>}
+                                                    {selectedPayment.eopDocumentFileName ? (
+                                                        <button onClick={handleDownloadEop} style={{ marginTop: 8, padding: '6px 10px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                                            Download EOP: {selectedPayment.eopDocumentFileName}
+                                                        </button>
+                                                    ) : (
+                                                        <div style={{ marginTop: 4 }}>EOP document has not been uploaded yet.</div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div>{paymentError || 'Payment request details are not available yet.'}</div>
+                                            )}
                                         </div>
                                     )}
                                 </>

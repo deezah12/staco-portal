@@ -82,10 +82,12 @@ export interface LeavePaymentRequest {
   amount: number;
   status: 'PENDING' | 'PROCESSED' | 'CANCELLED';
   hrNote?: string;
+  createdByHr?: { id: number; fullName: string; department?: string };
   createdAt: string;
   eopDocumentFileName?: string;
   processedAt?: string;
   accountNote?: string;
+  processedByAccount?: { id: number; fullName: string; department?: string };
 }
 
 export interface DashboardStats {

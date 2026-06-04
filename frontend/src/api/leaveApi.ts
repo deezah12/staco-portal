@@ -42,6 +42,12 @@ export const cancelLeave = (id: number) =>
 export const getMyBalance = () =>
   api.get<LeaveBalance>('/leave/balance');
 
+export const getLeavePayment = (leaveRequestId: number) =>
+  api.get<LeavePaymentRequest>(`/leave/${leaveRequestId}/payment`);
+
+export const downloadLeavePaymentEop = (leaveRequestId: number) =>
+  api.get<Blob>(`/leave/${leaveRequestId}/payment/eop`, { responseType: 'blob' });
+
 // -------------------------------------------------------
 // APPROVER (Unit Head / Div Head)
 // -------------------------------------------------------

@@ -48,6 +48,7 @@ const Sidebar: React.FC = () => {
                     <NavLink to="/admin/requests">📋 All Leave Requests</NavLink>
                     <NavLink to="/admin/leave-process">⚙️ Process Leave</NavLink>
                     <SectionLabel>Loans</SectionLabel>
+                    <NavLink to="/employee/requests">✏️ My Leave</NavLink>
                     <NavLink to="/employee/loans">💰 My Loans</NavLink>
                     <NavLink to="/admin/loans">💰 Loan Management</NavLink>
                     <SectionLabel>Performance</SectionLabel>

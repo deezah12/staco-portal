@@ -381,6 +381,25 @@ public class LeaveService {
         return paymentRepo.findByProcessedByAccountOrderByProcessedAtDesc(accountUser);
     }
 
+    public LeavePaymentRequest getPaymentForLeave(Long leaveRequestId, User user) {
+        LeavePaymentRequest payment = paymentRepo.findByLeaveRequestId(leaveRequestId)
+                .orElseThrow(() -> new RuntimeException("Payment request not found for this leave"));
+        validatePaymentAccess(payment, user);
+        return payment;
+    }
+
+    public Path getEopDocumentPath(Long leaveRequestId, User user) {
+        LeavePaymentRequest payment = getPaymentForLeave(leaveRequestId, user);
+        if (payment.getEopDocumentPath() == null || payment.getEopDocumentPath().isBlank()) {
+            throw new RuntimeException("EOP document has not been uploaded");
+        }
+        Path path = Paths.get(payment.getEopDocumentPath());
+        if (!Files.exists(path)) {
+            throw new RuntimeException("EOP document file not found");
+        }
+        return path;
+    }
+
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalRequests", leaveRepo.count());
@@ -505,6 +524,15 @@ public class LeaveService {
             return filePath.toString();
         } catch (Exception e) {
             throw new RuntimeException("Failed to save file: " + e.getMessage());
+        }
+    }
+
+    private void validatePaymentAccess(LeavePaymentRequest payment, User user) {
+        boolean isOwner = payment.getEmployee() != null && payment.getEmployee().getId().equals(user.getId());
+        boolean isHr = user.getRole() == User.Role.ADMIN;
+        boolean isAccount = user.getRole() == User.Role.ACCOUNT;
+        if (!isOwner && !isHr && !isAccount) {
+            throw new RuntimeException("You are not authorised to view this payment request");
         }
     }
 }
