@@ -4,9 +4,11 @@ import {applyLoan, getEligibleGuarantors, getMyLoans} from '../../api/loanApi';
 import {useAuth} from '../../context/AuthContext';
 import {LoanRequest, loanStatusMeta, REPAYMENT_DURATIONS} from '../../types/loan';
 import {format} from 'date-fns';
+import GuarantorRequests from "../guarantor/GuarantorRequests";
 
 const MyLoans: React.FC = () => {
     const {user} = useAuth();
+    const [tab, setTab] = useState<'loans' | 'guarantor'>('loans');
     const [loans, setLoans] = useState<LoanRequest[]>([]);
     const [eligibleGuarantors, setEligibleGuarantors] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -168,7 +170,45 @@ const MyLoans: React.FC = () => {
                         </button>)}
                 </div>
 
-                {loans.length === 0 ? (<div style={{...card, padding: '48px 24px', textAlign: 'center'}}>
+                <div style={{
+                    display: 'flex',
+                    gap: 10,
+                    marginBottom: 20
+                }}>
+                    <button
+                        onClick={() => setTab('loans')}
+                        style={{
+                            padding: '8px 18px',
+                            borderRadius: 10,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            background: tab === 'loans' ? '#7c3aed' : '#f1f5f9',
+                            color: tab === 'loans' ? '#fff' : '#475569'
+                        }}
+                    >
+                        💰 My Loans
+                    </button>
+
+                    <button
+                        onClick={() => setTab('guarantor')}
+                        style={{
+                            padding: '8px 18px',
+                            borderRadius: 10,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            background: tab === 'guarantor' ? '#7c3aed' : '#f1f5f9',
+                            color: tab === 'guarantor' ? '#fff' : '#475569'
+                        }}
+                    >
+                        ✍️ Guarantor Requests
+                    </button>
+                </div>
+
+                {tab === 'loans' && (
+                    <>
+                    {loans.length === 0 ? (<div style={{...card, padding: '48px 24px', textAlign: 'center'}}>
                         <div style={{fontSize: 40, marginBottom: 12}}>💰</div>
                         <div style={{fontSize: 15, fontWeight: 600, color: '#0f172a', marginBottom: 4}}>No loan
                             applications yet
@@ -188,7 +228,7 @@ const MyLoans: React.FC = () => {
                         }}>
                             Apply for a Loan
                         </button>
-                    </div>) : (<div style={{display: 'flex', flexDirection: 'column', gap: 14}}>
+                        </div>) : (<div style={{display: 'flex', flexDirection: 'column', gap: 14}}>
                         {loans.map(loan => {
                             const s = loanStatusMeta[loan.status] || {
                                 label: loan.status, bg: '#f1f5f9', color: '#64748b'
@@ -298,6 +338,11 @@ const MyLoans: React.FC = () => {
                                 </div>);
                         })}
                     </div>)}
+                    </>
+                )}
+                {tab === 'guarantor' && (
+                    <GuarantorRequests />
+                )}
             </div>
 
             {/* SIDE PANEL */}

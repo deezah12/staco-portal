@@ -13,27 +13,56 @@ const GuarantorRequests: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [tab, setTab]           = useState<'pending' | 'history'>('pending');
 
-  useEffect(() => {
-    Promise.all([getPendingGuarantorRequests(), getMyGuarantorRequests()])
-      .then(([p, h]) => { setPending(p.data); setHistory(h.data); })
-      .finally(() => setLoading(false));
-  }, []);
 
-  const handleRespond = async (accept: boolean) => {
-    if (!responding) return;
-    setSubmitting(true);
-    try {
-      await respondAsGuarantor(responding.loanRequest!.id, accept, comment);
-      setPending(prev => prev.filter(g => g.id !== responding.id));
-      toast.success(accept ? 'You have signed as guarantor' : 'You have declined this request');
-      setResponding(null); setComment('');
-      // Refresh history
-      const h = await getMyGuarantorRequests();
+useEffect(() => {
+  Promise.all([
+    getPendingGuarantorRequests(),
+    getMyGuarantorRequests()
+  ])
+    .then(([p, h]) => {
+
+      console.log('PENDING GUARANTOR RESPONSE', p.data);
+
+      setPending(p.data);
       setHistory(h.data);
-    } catch (err: any) {
-      const _d = err.response?.data; toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed to respond');
-    } finally { setSubmitting(false); }
-  };
+    })
+    .finally(() => setLoading(false));
+}, []);
+
+const handleRespond = async (accept: boolean) => {
+  if (!responding) return;
+  setSubmitting(true);
+
+  try {
+    await respondAsGuarantor(responding.loanRequestId, accept, comment);
+
+    setPending(prev => prev.filter(g => g.id !== responding.id));
+
+    toast.success(
+      accept
+        ? 'You have signed as guarantor'
+        : 'You have declined this request'
+    );
+
+    setResponding(null);
+    setComment('');
+
+    const h = await getMyGuarantorRequests();
+    setHistory(h.data);
+
+  } catch (err: any) {
+    const _d = err.response?.data;
+
+    toast.error(
+      typeof _d === 'string'
+        ? _d
+        : _d?.error || 'Failed to respond'
+    );
+
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (loading) return <div className="loading"><div className="spinner"/></div>;
 
@@ -67,43 +96,120 @@ const GuarantorRequests: React.FC = () => {
           ? <div className="card"><div className="empty-state"><div className="icon">🎉</div>No pending guarantor requests</div></div>
           : <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {pending.map(g => (
-                <div className="card" key={g.id} style={{ borderLeft: '4px solid #f59e0b' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>{g.loanRequest?.employee.fullName}</div>
-                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-                        {g.loanRequest?.employee.department} · Guarantor Slot {g.slotNumber}
+                  <div
+                      className="card"
+                      key={g.id}
+                      style={{ borderLeft: '4px solid #f59e0b' }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      flexWrap: 'wrap',
+                      gap: 14
+                    }}>
+                      <div>
+
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>
+                          {g.employee?.fullName}
+                        </div>
+
+                        <div style={{
+                          fontSize: 13,
+                          color: '#64748b',
+                          marginTop: 2
+                        }}>
+                          {g.employee?.department} · Guarantor Slot {g.slotNumber}
+                        </div>
+
+                        <div style={{
+                          marginTop: 10,
+                          display: 'flex',
+                          gap: 16,
+                          flexWrap: 'wrap'
+                        }}>
+                          <div>
+                            <div style={{
+                              fontSize: 11,
+                              color: '#94a3b8',
+                              textTransform: 'uppercase',
+                              fontWeight: 600
+                            }}>
+                              Amount
+                            </div>
+
+                            <div style={{ fontWeight: 700, fontSize: 16 }}>
+                              ₦{Number(g.amount).toLocaleString('en-NG')}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div style={{
+                              fontSize: 11,
+                              color: '#94a3b8',
+                              textTransform: 'uppercase',
+                              fontWeight: 600
+                            }}>
+                              Duration
+                            </div>
+
+                            <div style={{ fontWeight: 600 }}>
+                              {g.repaymentMonths} months
+                            </div>
+                          </div>
+
+                          <div>
+                            <div style={{
+                              fontSize: 11,
+                              color: '#94a3b8',
+                              textTransform: 'uppercase',
+                              fontWeight: 600
+                            }}>
+                              Monthly
+                            </div>
+
+                            <div style={{ fontWeight: 600 }}>
+                              ₦{Number(g.monthlyDeduction).toLocaleString('en-NG')}
+                            </div>
+                          </div>
+                        </div>
+
+                        {g.reason && (
+                            <div style={{
+                              marginTop: 8,
+                              fontSize: 13,
+                              color: '#64748b',
+                              background: '#f8fafc',
+                              padding: '6px 10px',
+                              borderRadius: 6
+                            }}>
+                              Reason: {g.reason}
+                            </div>
+                        )}
+
+                        <div style={{
+                          fontSize: 12,
+                          color: '#94a3b8',
+                          marginTop: 6
+                        }}>
+                          Requested {format(new Date(g.invitedAt), 'dd MMM yyyy')}
+                        </div>
+
                       </div>
-                      <div style={{ marginTop: 10, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                        <div>
-                          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Amount</div>
-                          <div style={{ fontWeight: 700, fontSize: 16 }}>₦{Number(g.loanRequest?.amount).toLocaleString('en-NG')}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Duration</div>
-                          <div style={{ fontWeight: 600 }}>{g.loanRequest?.repaymentMonths} months</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Monthly</div>
-                          <div style={{ fontWeight: 600 }}>₦{Number(g.loanRequest?.monthlyDeduction).toLocaleString('en-NG')}</div>
-                        </div>
-                      </div>
-                      {g.loanRequest?.reason && (
-                        <div style={{ marginTop: 8, fontSize: 13, color: '#64748b', background: '#f8fafc', padding: '6px 10px', borderRadius: 6 }}>
-                          Reason: {g.loanRequest.reason}
-                        </div>
-                      )}
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>
-                        Requested {format(new Date(g.invitedAt), 'dd MMM yyyy')}
-                      </div>
+
+                      <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => {
+                            setResponding(g);
+                            setComment('');
+                          }}
+                      >
+                        ✍️ Respond
+                      </button>
                     </div>
-                    <button className="btn btn-primary btn-sm"
-                      onClick={() => { setResponding(g); setComment(''); }}>
-                      ✍️ Respond
-                    </button>
                   </div>
-                </div>
               ))}
+
             </div>
       )}
 
@@ -115,9 +221,9 @@ const GuarantorRequests: React.FC = () => {
                 <div className="card" key={g.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                     <div>
-                      <div style={{ fontWeight: 600 }}>{g.loanRequest?.employee.fullName}</div>
+                      <div style={{ fontWeight: 600 }}>{g.employee?.fullName}</div>
                       <div style={{ fontSize: 13, color: '#64748b' }}>
-                        ₦{Number(g.loanRequest?.amount).toLocaleString('en-NG')} · {g.loanRequest?.repaymentMonths} months
+                        ₦{Number(g.amount).toLocaleString('en-NG')} · {g.repaymentMonths} months
                       </div>
                     </div>
                     <span style={{
@@ -142,12 +248,12 @@ const GuarantorRequests: React.FC = () => {
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 14, marginBottom: 16 }}>
               <div style={{ fontWeight: 700 }}>⚠️ By signing, you agree to guarantee this loan</div>
               <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>
-                If <strong>{responding.loanRequest?.employee.fullName}</strong> defaults, you may be held responsible.
+                If <strong>{responding.employee?.fullName}</strong> defaults, you may be held responsible.
               </div>
               <div style={{ marginTop: 10, fontSize: 13 }}>
-                Amount: <strong>₦{Number(responding.loanRequest?.amount).toLocaleString('en-NG')}</strong> ·
-                Monthly: <strong>₦{Number(responding.loanRequest?.monthlyDeduction).toLocaleString('en-NG')}</strong> ·
-                {responding.loanRequest?.repaymentMonths} months
+                Amount: <strong>₦{Number(responding.amount).toLocaleString('en-NG')}</strong> ·
+                Monthly: <strong>₦{Number(responding.monthlyDeduction).toLocaleString('en-NG')}</strong> ·
+                {responding.repaymentMonths} months
               </div>
             </div>
             <div className="form-group">

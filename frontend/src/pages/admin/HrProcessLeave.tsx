@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getPendingHr, hrProcessLeave, hrConfirmResumption, getOverstayedLeaves } from '../../api/leaveApi';
 import { LeaveRequest, leaveTypeLabel } from '../../types';
@@ -13,18 +13,23 @@ const HrProcessLeave: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [tab, setTab]             = useState<'pending' | 'overstayed'>('pending');
 
-  useEffect(() => {
-    Promise.all([getPendingHr(), getOverstayedLeaves()])
-      .then(([p, o]) => { setPending(p.data); setOverstayed(o.data); })
-      .finally(() => setLoading(false));
+  const loadQueues = useCallback(async () => {
+    const [p, o] = await Promise.all([getPendingHr(), getOverstayedLeaves()]);
+    setPending(p.data);
+    setOverstayed(o.data);
   }, []);
+
+  useEffect(() => {
+    loadQueues()
+      .finally(() => setLoading(false));
+  }, [loadQueues]);
 
   const handleProcess = async () => {
     if (!processing) return;
     setSubmitting(true);
     try {
       await hrProcessLeave(processing.id, comment);
-      setPending(prev => prev.filter(r => r.id !== processing.id));
+      await loadQueues();
       toast.success('Leave processed — confirmation email sent');
       setProcessing(null); setComment('');
     } catch (err: any) {

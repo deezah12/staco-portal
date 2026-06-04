@@ -45,6 +45,9 @@ export const respondAsGuarantor = (loanRequestId: number, accept: boolean, comme
 export const getPendingLoansForApprover = () =>
   api.get<LoanRequest[]>('/loans/approver/pending');
 
+export const getLoanApprovalHistory = () =>
+  api.get<LoanRequest[]>('/loans/approver/history');
+
 export const unitHeadLoanReview = (id: number, approved: boolean, comment?: string) =>
   api.post<LoanRequest>(`/loans/${id}/unit-head-review`, { approved, comment });
 
@@ -105,4 +108,3 @@ export const deleteGrade = (id: number) =>
 // Legacy alias used in some admin pages
 export const getAllEmployees = () =>
   api.get<any[]>('/loans/eligible-guarantors');
-

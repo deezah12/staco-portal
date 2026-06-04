@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getPendingForApprover, unitHeadReview, divHeadReview, hodConfirmResumption } from '../../api/leaveApi';
+import { getPendingForApprover, getApprovalHistory, unitHeadReview, divHeadReview, hodConfirmResumption } from '../../api/leaveApi';
 import { LeaveRequest, leaveTypeLabel } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { format } from 'date-fns';
@@ -8,13 +8,17 @@ import { format } from 'date-fns';
 const ApproverPending: React.FC = () => {
   const { approvalLevel } = useAuth();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [history, setHistory] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState<LeaveRequest | null>(null);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [tab, setTab] = useState<'pending' | 'history'>('pending');
 
   useEffect(() => {
-    getPendingForApprover().then(r => setRequests(r.data)).finally(() => setLoading(false));
+    Promise.all([getPendingForApprover(), getApprovalHistory()])
+      .then(([p, h]) => { setRequests(p.data); setHistory(h.data); })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleReview = async (approved: boolean) => {
@@ -23,7 +27,9 @@ const ApproverPending: React.FC = () => {
     try {
       if (approvalLevel === 'UNIT_HEAD') await unitHeadReview(reviewing.id, approved, comment);
       else await divHeadReview(reviewing.id, approved, comment);
-      setRequests(prev => prev.filter(r => r.id !== reviewing.id));
+      const [p, h] = await Promise.all([getPendingForApprover(), getApprovalHistory()]);
+      setRequests(p.data);
+      setHistory(h.data);
       toast.success(`Request ${approved ? 'approved' : 'rejected'}`);
       setReviewing(null); setComment('');
     } catch (err: any) {
@@ -41,6 +47,18 @@ const ApproverPending: React.FC = () => {
 
   if (loading) return <div className="loading"><div className="spinner"/></div>;
   const levelLabel = approvalLevel === 'UNIT_HEAD' ? 'Unit Head' : 'Divisional Head';
+  const reviewStatus = (request: LeaveRequest) => approvalLevel === 'UNIT_HEAD' ? request.unitHeadStatus : request.divHeadStatus;
+  const reviewComment = (request: LeaveRequest) => approvalLevel === 'UNIT_HEAD' ? request.unitHeadComment : request.divHeadComment;
+  const reviewedAt = (request: LeaveRequest) => approvalLevel === 'UNIT_HEAD' ? request.unitHeadReviewedAt : request.divHeadReviewedAt;
+  const TabBtn = ({ id, label, count }: { id: 'pending' | 'history'; label: string; count: number }) => (
+    <button onClick={() => setTab(id)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none',
+      cursor: 'pointer', fontWeight: 600, fontSize: 13,
+      background: tab === id ? '#4f9cff' : '#f1f5f9',
+      color: tab === id ? '#fff' : '#374151' }}>
+      {label} {count > 0 && <span style={{ background: tab === id ? 'rgba(255,255,255,0.3)' : '#64748b',
+        color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 11, marginLeft: 6 }}>{count}</span>}
+    </button>
+  );
 
   return (
     <div>
@@ -49,7 +67,12 @@ const ApproverPending: React.FC = () => {
         <p>{levelLabel} · {requests.length} request{requests.length !== 1 ? 's' : ''} awaiting review</p>
       </div>
 
-      {requests.length === 0 ? (
+      <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        <TabBtn id="pending" label="Pending" count={requests.length} />
+        <TabBtn id="history" label="History" count={history.length} />
+      </div>
+
+      {tab === 'pending' && (requests.length === 0 ? (
         <div className="card"><div className="empty-state"><div className="icon">🎉</div>All caught up!</div></div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -81,7 +104,40 @@ const ApproverPending: React.FC = () => {
             </div>
           ))}
         </div>
-      )}
+      ))}
+
+      {tab === 'history' && (history.length === 0 ? (
+        <div className="card"><div className="empty-state"><div className="icon">📭</div>No approval history</div></div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {history.map(r => {
+            const status = reviewStatus(r);
+            const note = reviewComment(r);
+            const date = reviewedAt(r);
+            return (
+              <div className="card" key={r.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>{r.employee.fullName}</div>
+                    <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{r.employee.department} · {leaveTypeLabel[r.leaveType]}</div>
+                    <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13 }}>📅 {format(new Date(r.startDate), 'dd MMM yyyy')} → {format(new Date(r.endDate), 'dd MMM yyyy')}</span>
+                      <span style={{ fontSize: 13 }}>⏱ {r.totalDays} day{r.totalDays > 1 ? 's' : ''}</span>
+                      {date && <span style={{ fontSize: 13, color: '#64748b' }}>Reviewed {format(new Date(date), 'dd MMM yyyy')}</span>}
+                    </div>
+                    {note && <div style={{ fontSize: 13, color: '#64748b', marginTop: 6, background: '#f8fafc', padding: '6px 10px', borderRadius: 6 }}>💬 {note}</div>}
+                  </div>
+                  <span style={{
+                    padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    background: status === 'APPROVED' ? '#dcfce7' : '#fee2e2',
+                    color: status === 'APPROVED' ? '#16a34a' : '#dc2626'
+                  }}>{status}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
 
       {reviewing && (
         <div className="modal-overlay">

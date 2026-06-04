@@ -24,14 +24,35 @@ export interface Grade {
 
 export interface LoanGuarantor {
   id: number;
-  guarantor: { id: number; fullName: string; department?: string; grade?: Grade };
+  loanRequestId: number;
+
+  guarantor: {
+    id: number;
+    fullName: string;
+    department?: string;
+    grade?: Grade;
+  };
+
+  employee?: {
+    id: number;
+    fullName: string;
+    department?: string;
+  };
+
+  amount?: number;
+  monthlyDeduction?: number;
+  repaymentMonths?: number;
+  reason?: string;
+  purpose?: string;
+
   slotNumber: number;
   status: GuarantorStatus;
+
   comment?: string;
   respondedAt?: string;
   invitedAt: string;
-  loanRequest?: LoanRequest;
 }
+
 
 export interface LoanRepayment {
   id: number;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getPendingLoansForApprover, unitHeadLoanReview, divHeadLoanReview, mdLoanReview } from '../../api/loanApi';
+import { getPendingLoansForApprover, getLoanApprovalHistory, unitHeadLoanReview, divHeadLoanReview, mdLoanReview } from '../../api/loanApi';
 import { LoanRequest, loanStatusMeta } from '../../types/loan';
 import { useAuth } from '../../context/AuthContext';
 import { format } from 'date-fns';
@@ -8,13 +8,17 @@ import { format } from 'date-fns';
 const ApproverLoans: React.FC = () => {
   const { approvalLevel } = useAuth();
   const [loans, setLoans]       = useState<LoanRequest[]>([]);
+  const [history, setHistory]   = useState<LoanRequest[]>([]);
   const [loading, setLoading]   = useState(true);
   const [reviewing, setReviewing] = useState<LoanRequest | null>(null);
   const [comment, setComment]   = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [tab, setTab] = useState<'pending' | 'history'>('pending');
 
   useEffect(() => {
-    getPendingLoansForApprover().then(r => setLoans(r.data)).finally(() => setLoading(false));
+    Promise.all([getPendingLoansForApprover(), getLoanApprovalHistory()])
+      .then(([p, h]) => { setLoans(p.data); setHistory(h.data); })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleReview = async (approved: boolean) => {
@@ -24,7 +28,9 @@ const ApproverLoans: React.FC = () => {
       if (approvalLevel === 'UNIT_HEAD')     await unitHeadLoanReview(reviewing.id, approved, comment);
       else if (approvalLevel === 'DIV_HEAD') await divHeadLoanReview(reviewing.id, approved, comment);
       else                                   await mdLoanReview(reviewing.id, approved, comment);
-      setLoans(prev => prev.filter(l => l.id !== reviewing.id));
+      const [p, h] = await Promise.all([getPendingLoansForApprover(), getLoanApprovalHistory()]);
+      setLoans(p.data);
+      setHistory(h.data);
       toast.success(`Loan ${approved ? 'approved' : 'rejected'}`);
       setReviewing(null); setComment('');
     } catch (err: any) {
@@ -34,6 +40,18 @@ const ApproverLoans: React.FC = () => {
 
   if (loading) return <div className="loading"><div className="spinner"/></div>;
   const levelLabel = approvalLevel === 'MD' ? 'MD' : approvalLevel === 'DIV_HEAD' ? 'Divisional Head' : 'Unit Head';
+  const reviewStatus = (loan: LoanRequest) => approvalLevel === 'UNIT_HEAD' ? loan.unitHeadStatus : approvalLevel === 'DIV_HEAD' ? loan.divHeadStatus : loan.mdStatus;
+  const reviewComment = (loan: LoanRequest) => approvalLevel === 'UNIT_HEAD' ? loan.unitHeadComment : approvalLevel === 'DIV_HEAD' ? loan.divHeadComment : loan.mdComment;
+  const reviewedAt = (loan: LoanRequest) => approvalLevel === 'UNIT_HEAD' ? loan.unitHeadReviewedAt : approvalLevel === 'DIV_HEAD' ? loan.divHeadReviewedAt : loan.mdReviewedAt;
+  const TabBtn = ({ id, label, count }: { id: 'pending' | 'history'; label: string; count: number }) => (
+    <button onClick={() => setTab(id)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none',
+      cursor: 'pointer', fontWeight: 600, fontSize: 13,
+      background: tab === id ? '#4f9cff' : '#f1f5f9',
+      color: tab === id ? '#fff' : '#374151' }}>
+      {label} {count > 0 && <span style={{ background: tab === id ? 'rgba(255,255,255,0.3)' : '#64748b',
+        color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 11, marginLeft: 6 }}>{count}</span>}
+    </button>
+  );
 
   return (
     <div>
@@ -42,7 +60,12 @@ const ApproverLoans: React.FC = () => {
         <p>{levelLabel} · {loans.length} loan{loans.length !== 1 ? 's' : ''} awaiting your review</p>
       </div>
 
-      {loans.length === 0
+      <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        <TabBtn id="pending" label="Pending" count={loans.length} />
+        <TabBtn id="history" label="History" count={history.length} />
+      </div>
+
+      {tab === 'pending' && (loans.length === 0
         ? <div className="card"><div className="empty-state"><div className="icon">🎉</div>No pending loan approvals</div></div>
         : <div style={{ display:'flex', flexDirection:'column', gap: 14 }}>
             {loans.map(loan => {
@@ -88,7 +111,44 @@ const ApproverLoans: React.FC = () => {
               );
             })}
           </div>
-      }
+      )}
+
+      {tab === 'history' && (history.length === 0
+        ? <div className="card"><div className="empty-state"><div className="icon">📭</div>No loan approval history</div></div>
+        : <div style={{ display:'flex', flexDirection:'column', gap: 14 }}>
+            {history.map(loan => {
+              const status = reviewStatus(loan);
+              const note = reviewComment(loan);
+              const date = reviewedAt(loan);
+              return (
+                <div className="card" key={loan.id}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap: 14 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{loan.employee.fullName}</div>
+                      <div style={{ fontSize: 13, color:'#64748b', marginTop: 2 }}>
+                        {loan.employee.department} · ₦{Number(loan.amount).toLocaleString('en-NG')} · {loan.repaymentMonths} months
+                      </div>
+                      <div style={{ fontSize: 13, marginTop: 6, color:'#64748b' }}>
+                        Applied {format(new Date(loan.createdAt), 'dd MMM yyyy')}
+                        {date && <> · Reviewed {format(new Date(date), 'dd MMM yyyy')}</>}
+                      </div>
+                      {note && (
+                        <div style={{ fontSize: 13, marginTop: 6, background:'#f8fafc', padding:'6px 10px', borderRadius: 6 }}>
+                          💬 {note}
+                        </div>
+                      )}
+                    </div>
+                    <span style={{
+                      padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      background: status === 'APPROVED' ? '#dcfce7' : '#fee2e2',
+                      color: status === 'APPROVED' ? '#16a34a' : '#dc2626'
+                    }}>{status}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+      )}
 
       {reviewing && (
         <div className="modal-overlay">

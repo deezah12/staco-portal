@@ -49,6 +49,9 @@ export const getMyBalance = () =>
 export const getPendingForApprover = () =>
   api.get<LeaveRequest[]>('/leave/approver/pending');
 
+export const getApprovalHistory = () =>
+  api.get<LeaveRequest[]>('/leave/approver/history');
+
 export const unitHeadReview = (id: number, approved: boolean, comment?: string) =>
   api.post<LeaveRequest>(`/leave/${id}/unit-head-review`, { approved, comment });
 
