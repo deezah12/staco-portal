@@ -22,6 +22,12 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
             @Param("status") LeaveRequest.Status status,
             @Param("dept") String department);
 
+    @Query("SELECT l FROM LeaveRequest l WHERE l.unitHeadReviewer = :reviewer ORDER BY l.unitHeadReviewedAt DESC")
+    List<LeaveRequest> findUnitHeadHistory(@Param("reviewer") User reviewer);
+
+    @Query("SELECT l FROM LeaveRequest l WHERE l.divHeadReviewer = :reviewer ORDER BY l.divHeadReviewedAt DESC")
+    List<LeaveRequest> findDivHeadHistory(@Param("reviewer") User reviewer);
+
     // Active leaves that have passed their end date and not yet resumed — overstays
     @Query("SELECT l FROM LeaveRequest l WHERE l.status = 'ACTIVE' AND l.endDate < :today AND (l.resumedConfirmedByHr = false OR l.resumedConfirmedByHod = false)")
     List<LeaveRequest> findOverstayedLeaves(@Param("today") LocalDate today);
