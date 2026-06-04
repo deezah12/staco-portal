@@ -184,6 +184,28 @@ public class EmailService {
         sendRaw(accountUser.getEmail(), subject, body);
     }
 
+    public void sendEopUploadedNotification(LeavePaymentRequest payment) {
+        String employeeSubject = "[" + appName + "] Your Leave EOP Document Has Been Uploaded";
+        String employeeBody = "Dear " + payment.getEmployee().getFullName() + ",\n\n"
+                + "Accounts has processed your annual leave payment request and uploaded the EOP document.\n\n"
+                + "Amount   : ₦" + String.format("%,.2f", payment.getAmount()) + "\n"
+                + "Document : " + (payment.getEopDocumentFileName() != null ? payment.getEopDocumentFileName() : "EOP document") + "\n\n"
+                + "Please log in to the HR Portal to view or download the document.\n\n"
+                + "Regards,\n" + appName;
+        sendRaw(payment.getEmployee().getEmail(), employeeSubject, employeeBody);
+
+        if (payment.getCreatedByHr() != null && payment.getCreatedByHr().getEmail() != null) {
+            String hrSubject = "[" + appName + "] Leave EOP Uploaded — " + payment.getEmployee().getFullName();
+            String hrBody = "Dear " + payment.getCreatedByHr().getFullName() + ",\n\n"
+                    + "Accounts has uploaded the EOP document for "
+                    + payment.getEmployee().getFullName() + "'s annual leave payment request.\n\n"
+                    + "Document : " + (payment.getEopDocumentFileName() != null ? payment.getEopDocumentFileName() : "EOP document") + "\n"
+                    + "Note     : " + (payment.getAccountNote() != null ? payment.getAccountNote() : "N/A") + "\n\n"
+                    + "Regards,\n" + appName;
+            sendRaw(payment.getCreatedByHr().getEmail(), hrSubject, hrBody);
+        }
+    }
+
     // -------------------------------------------------------
     // Loan emails
     // -------------------------------------------------------

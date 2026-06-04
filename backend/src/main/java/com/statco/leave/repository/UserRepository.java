@@ -16,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByActiveTrue();
     List<User> findByApprovalLevel(User.ApprovalLevel approvalLevel);
 
+    @Query("SELECT u FROM User u WHERE u.active = true AND LOWER(u.department) = LOWER(:dept) AND u.id <> :excludeId ORDER BY u.fullName ASC")
+    List<User> findActiveDepartmentColleagues(@Param("dept") String department, @Param("excludeId") Long excludeId);
+
     @Query("SELECT u FROM User u WHERE u.department = :dept AND u.approvalLevel = 'UNIT_HEAD' AND u.active = true")
     Optional<User> findUnitHeadByDepartment(@Param("dept") String department);
 

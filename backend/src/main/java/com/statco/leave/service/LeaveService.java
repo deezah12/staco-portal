@@ -55,6 +55,7 @@ public class LeaveService {
         LeaveBalance balance = balanceRepo.findByEmployee(employee)
                 .orElseThrow(() -> new RuntimeException("Leave balance not found"));
         validateBalance(balance, dto.getLeaveType(), days);
+        validateReliefStaff(employee, dto.getReliefStaffName());
 
         // Save handover note file
         String filePath = saveFile(handoverNote, HANDOVER_DIR);
@@ -297,31 +298,42 @@ public class LeaveService {
         payment.setProcessedAt(LocalDateTime.now());
         payment.setStatus(LeavePaymentRequest.PaymentStatus.PROCESSED);
 
-        return paymentRepo.save(payment);
+        LeavePaymentRequest saved = paymentRepo.save(payment);
+        emailService.sendEopUploadedNotification(saved);
+        return saved;
     }
 
     @Transactional
-    public LeavePaymentRequest replaceEopDocument(Long paymentRequestId, User accountUser, MultipartFile eopDoc) {
+    public LeavePaymentRequest replaceEopDocument(Long paymentRequestId, User accountUser,
+                                                  Dto.EopProcessRequest dto,
+                                                  MultipartFile eopDoc) {
         if (accountUser.getRole() != User.Role.ACCOUNT) {
             throw new RuntimeException("Only Accounts staff can upload EOP documents");
-        }
-        if (eopDoc == null || eopDoc.isEmpty()) {
-            throw new RuntimeException("Please upload the EOP document");
         }
 
         LeavePaymentRequest payment = paymentRepo.findById(paymentRequestId)
                 .orElseThrow(() -> new RuntimeException("Payment request not found"));
 
-        String filePath = saveFile(eopDoc, EOP_DIR);
-        payment.setEopDocumentPath(filePath);
-        payment.setEopDocumentFileName(eopDoc.getOriginalFilename());
+        boolean hadNewDocument = eopDoc != null && !eopDoc.isEmpty();
+        if (hadNewDocument) {
+            String filePath = saveFile(eopDoc, EOP_DIR);
+            payment.setEopDocumentPath(filePath);
+            payment.setEopDocumentFileName(eopDoc.getOriginalFilename());
+        }
+        if (dto != null) {
+            payment.setAccountNote(dto.getAccountNote());
+        }
         payment.setProcessedByAccount(accountUser);
         payment.setProcessedAt(LocalDateTime.now());
         if (payment.getStatus() == LeavePaymentRequest.PaymentStatus.PENDING) {
             payment.setStatus(LeavePaymentRequest.PaymentStatus.PROCESSED);
         }
 
-        return paymentRepo.save(payment);
+        LeavePaymentRequest saved = paymentRepo.save(payment);
+        if (hadNewDocument) {
+            emailService.sendEopUploadedNotification(saved);
+        }
+        return saved;
     }
 
     // -------------------------------------------------------
@@ -361,6 +373,15 @@ public class LeaveService {
 
     public List<LeaveRequest> getMyRequests(User employee) {
         return leaveRepo.findByEmployeeOrderByCreatedAtDesc(employee);
+    }
+
+    public List<Dto.ReliefStaffDto> getReliefStaffOptions(User employee) {
+        if (employee.getDepartment() == null || employee.getDepartment().isBlank()) {
+            return List.of();
+        }
+        return userRepo.findActiveDepartmentColleagues(employee.getDepartment(), employee.getId()).stream()
+                .map(Dto.ReliefStaffDto::from)
+                .toList();
     }
 
     public List<LeaveRequest> getAllRequests() {
@@ -424,6 +445,20 @@ public class LeaveService {
         Path path = resolveStoredFilePath(payment.getEopDocumentPath());
         if (!Files.exists(path)) {
             throw new RuntimeException("EOP document file not found");
+        }
+        return path;
+    }
+
+    public Path getHandoverNotePath(Long leaveRequestId, User user) {
+        LeaveRequest request = leaveRepo.findById(leaveRequestId)
+                .orElseThrow(() -> new RuntimeException("Leave request not found"));
+        validateLeaveDocumentAccess(request, user);
+        if (request.getHandoverNotePath() == null || request.getHandoverNotePath().isBlank()) {
+            throw new RuntimeException("Handover note has not been uploaded");
+        }
+        Path path = resolveStoredFilePath(request.getHandoverNotePath());
+        if (!Files.exists(path)) {
+            throw new RuntimeException("Handover note file not found");
         }
         return path;
     }
@@ -527,6 +562,17 @@ public class LeaveService {
         }
     }
 
+    private void validateReliefStaff(User employee, String reliefStaffName) {
+        if (employee.getDepartment() == null || employee.getDepartment().isBlank()) {
+            throw new RuntimeException("Your department is not set. Contact HR before applying for leave");
+        }
+        boolean validReliefStaff = userRepo.findActiveDepartmentColleagues(employee.getDepartment(), employee.getId()).stream()
+                .anyMatch(user -> user.getFullName() != null && user.getFullName().equalsIgnoreCase(reliefStaffName));
+        if (!validReliefStaff) {
+            throw new RuntimeException("Relief staff must be an active staff member in your department");
+        }
+    }
+
     private void deductBalance(LeaveRequest request) {
         LeaveBalance balance = balanceRepo.findByEmployee(request.getEmployee())
                 .orElseThrow(() -> new RuntimeException("Balance not found"));
@@ -585,6 +631,18 @@ public class LeaveService {
         boolean isAccount = user.getRole() == User.Role.ACCOUNT;
         if (!isOwner && !isHr && !isAccount) {
             throw new RuntimeException("You are not authorised to view this payment request");
+        }
+    }
+
+    private void validateLeaveDocumentAccess(LeaveRequest request, User user) {
+        boolean isOwner = request.getEmployee() != null && request.getEmployee().getId().equals(user.getId());
+        boolean isHr = user.getRole() == User.Role.ADMIN;
+        boolean isDepartmentApprover = user.getApprovalLevel() != User.ApprovalLevel.NONE
+                && request.getEmployee() != null
+                && user.getDepartment() != null
+                && user.getDepartment().equalsIgnoreCase(request.getEmployee().getDepartment());
+        if (!isOwner && !isHr && !isDepartmentApprover) {
+            throw new RuntimeException("You are not authorised to view this handover note");
         }
     }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getMyRequests, cancelLeave, applyLeave, getMyBalance, getLeavePayment, downloadLeavePaymentEop } from '../../api/leaveApi';
-import { LeaveRequest, LeaveBalance, LeavePaymentRequest, LeaveType, leaveTypeLabel, statusLabel } from '../../types';
+import { getMyRequests, cancelLeave, applyLeave, getMyBalance, getLeavePayment, downloadLeavePaymentEop, downloadHandoverNote, getReliefStaffOptions } from '../../api/leaveApi';
+import { LeaveRequest, LeaveBalance, LeavePaymentRequest, ReliefStaffOption, LeaveType, leaveTypeLabel, statusLabel } from '../../types';
 import { format, differenceInCalendarDays } from 'date-fns';
 
 const LEAVE_GROUPS = [
@@ -44,6 +44,7 @@ const LeaveRequests: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<LeaveRequest | null>(null);
     const [selectedPayment, setSelectedPayment] = useState<LeavePaymentRequest | null>(null);
+    const [reliefStaff, setReliefStaff] = useState<ReliefStaffOption[]>([]);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [paymentError, setPaymentError] = useState('');
     const [showApply, setShowApply] = useState(false);
@@ -56,8 +57,12 @@ const LeaveRequests: React.FC = () => {
     });
 
     useEffect(() => {
-        Promise.all([getMyRequests(), getMyBalance()])
-            .then(([r, b]) => { setRequests(r.data); setBalance(b.data); })
+        Promise.all([getMyRequests(), getMyBalance(), getReliefStaffOptions()])
+            .then(([r, b, relief]) => {
+                setRequests(r.data);
+                setBalance(b.data);
+                setReliefStaff(relief.data);
+            })
             .finally(() => setLoading(false));
     }, []);
 
@@ -97,6 +102,7 @@ const LeaveRequests: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (days <= 0) { toast.error('End date must be after start date'); return; }
+        if (!form.reliefStaffName) { toast.error('Please select relief staff from your department'); return; }
         if (!handoverFile) { toast.error('Please upload a handover note'); return; }
         setSubmitting(true);
         try {
@@ -128,6 +134,24 @@ const LeaveRequests: React.FC = () => {
         } catch (err: any) {
             const d = err.response?.data;
             toast.error(typeof d === 'string' ? d : d?.error || 'Failed to download EOP');
+        }
+    };
+
+    const handleDownloadHandover = async () => {
+        if (!selected) return;
+        try {
+            const res = await downloadHandoverNote(selected.id);
+            const url = URL.createObjectURL(res.data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = selected.handoverNoteFileName || 'handover-note';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (err: any) {
+            const d = err.response?.data;
+            toast.error(typeof d === 'string' ? d : d?.error || 'Failed to download handover note');
         }
     };
 
@@ -393,9 +417,20 @@ const LeaveRequests: React.FC = () => {
                                         {/* Relief Staff */}
                                         <div style={{ marginBottom: 14 }}>
                                             <label style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', display: 'block', marginBottom: 6 }}>Relief Staff Name <span style={{ color: '#ef4444' }}>*</span></label>
-                                            <input type="text" value={form.reliefStaffName} placeholder="Colleague covering your duties"
-                                                   onChange={e => setForm(f => ({ ...f, reliefStaffName: e.target.value }))}
-                                                   style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 13, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} required />
+                                            <select value={form.reliefStaffName}
+                                                    onChange={e => setForm(f => ({ ...f, reliefStaffName: e.target.value }))}
+                                                    disabled={reliefStaff.length === 0}
+                                                    style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 13, color: form.reliefStaffName ? '#0f172a' : '#94a3b8', outline: 'none', boxSizing: 'border-box', background: reliefStaff.length === 0 ? '#f8fafc' : '#fff' }} required>
+                                                <option value="">{reliefStaff.length === 0 ? 'No department colleagues available' : 'Select colleague covering your duties'}</option>
+                                                {reliefStaff.map(staff => (
+                                                    <option key={staff.id} value={staff.fullName}>
+                                                        {staff.fullName}{staff.position ? ` - ${staff.position}` : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {reliefStaff.length === 0 && (
+                                                <div style={{ fontSize: 11, color: '#d97706', marginTop: 4 }}>Ask HR to assign active staff to your department before applying.</div>
+                                            )}
                                         </div>
 
                                         {/* Reason */}
@@ -437,7 +472,7 @@ const LeaveRequests: React.FC = () => {
                                             <button type="button" onClick={() => setShowApply(false)} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                                                 Cancel
                                             </button>
-                                            <button type="submit" disabled={submitting} style={{ flex: 2, padding: '11px', borderRadius: 12, background: submitting ? '#a78bfa' : '#7c3aed', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+                                            <button type="submit" disabled={submitting || reliefStaff.length === 0} style={{ flex: 2, padding: '11px', borderRadius: 12, background: submitting || reliefStaff.length === 0 ? '#a78bfa' : '#7c3aed', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: submitting || reliefStaff.length === 0 ? 'not-allowed' : 'pointer' }}>
                                                 {submitting ? 'Submitting...' : 'Submit Request'}
                                             </button>
                                         </div>
@@ -478,7 +513,9 @@ const LeaveRequests: React.FC = () => {
                                         </div>
                                         {selected.reason && <div style={{ marginTop: 10, fontSize: 13, color: '#475569', borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>{selected.reason}</div>}
                                         {selected.handoverNoteFileName && (
-                                            <div style={{ marginTop: 8, fontSize: 12, color: '#7c3aed', fontWeight: 600 }}>📎 {selected.handoverNoteFileName}</div>
+                                            <button onClick={handleDownloadHandover} style={{ marginTop: 8, padding: '6px 10px', borderRadius: 8, border: 'none', background: '#ede9fe', color: '#7c3aed', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                                Download Handover: {selected.handoverNoteFileName}
+                                            </button>
                                         )}
                                     </div>
 

@@ -65,6 +65,14 @@ export interface LeaveRequest {
   createdAt: string;
 }
 
+export interface ReliefStaffOption {
+  id: number;
+  fullName: string;
+  email: string;
+  department?: string;
+  position?: string;
+}
+
 export interface LeaveBalance {
   annualTotal: number; annualUsed: number; annualRemaining: number;
   sickTotal: number; sickUsed: number; sickRemaining: number;

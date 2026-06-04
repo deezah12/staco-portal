@@ -130,6 +130,25 @@ public class Dto {
         // handoverNote file is sent as MultipartFile alongside this DTO
     }
 
+    @Data
+    public static class ReliefStaffDto {
+        private Long id;
+        private String fullName;
+        private String email;
+        private String department;
+        private String position;
+
+        public static ReliefStaffDto from(User user) {
+            ReliefStaffDto dto = new ReliefStaffDto();
+            dto.id = user.getId();
+            dto.fullName = user.getFullName();
+            dto.email = user.getEmail();
+            dto.department = user.getDepartment();
+            dto.position = user.getPosition();
+            return dto;
+        }
+    }
+
     // -------------------------------------------------------
     // Approval (Unit Head / Div Head)
     // -------------------------------------------------------

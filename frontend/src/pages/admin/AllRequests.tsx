@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getAllRequests, getLeavePayment, downloadLeavePaymentEop } from '../../api/leaveApi';
+import { getAllRequests, getLeavePayment, downloadLeavePaymentEop, downloadHandoverNote } from '../../api/leaveApi';
 import { LeavePaymentRequest, LeaveRequest, LeaveStatus } from '../../types';
 import { format } from 'date-fns';
 
@@ -52,6 +52,24 @@ const AllRequests: React.FC = () => {
     } catch (err: any) {
       const d = err.response?.data;
       toast.error(typeof d === 'string' ? d : d?.error || 'Failed to download EOP');
+    }
+  };
+
+  const downloadHandover = async () => {
+    if (!selected) return;
+    try {
+      const res = await downloadHandoverNote(selected.id);
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = selected.handoverNoteFileName || 'handover-note';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      const d = err.response?.data;
+      toast.error(typeof d === 'string' ? d : d?.error || 'Failed to download handover note');
     }
   };
 
@@ -123,7 +141,11 @@ const AllRequests: React.FC = () => {
               </div>
               <div style={{ fontSize: 13, marginTop: 6 }}>Relief: <strong>{selected.reliefStaffName}</strong></div>
               {selected.reason && <div style={{ fontSize: 13, marginTop: 6 }}>Reason: {selected.reason}</div>}
-              {selected.handoverNoteFileName && <div style={{ fontSize: 12, color: '#4f9cff', marginTop: 6 }}>📎 {selected.handoverNoteFileName}</div>}
+              {selected.handoverNoteFileName && (
+                <button className="btn btn-outline btn-sm" style={{ marginTop: 8 }} onClick={downloadHandover}>
+                  Download Handover: {selected.handoverNoteFileName}
+                </button>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 16 }}>

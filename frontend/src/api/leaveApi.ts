@@ -1,5 +1,5 @@
 import api from './client';
-import { AuthUser, LeaveRequest, LeaveBalance, DashboardStats, LeavePaymentRequest } from '../types';
+import { AuthUser, LeaveRequest, LeaveBalance, DashboardStats, LeavePaymentRequest, ReliefStaffOption } from '../types';
 
 // -------------------------------------------------------
 // AUTH
@@ -36,6 +36,9 @@ export const applyLeave = (
 export const getMyRequests = () =>
   api.get<LeaveRequest[]>('/leave/my-requests');
 
+export const getReliefStaffOptions = () =>
+  api.get<ReliefStaffOption[]>('/leave/relief-staff');
+
 export const cancelLeave = (id: number) =>
   api.post<LeaveRequest>(`/leave/${id}/cancel`);
 
@@ -47,6 +50,9 @@ export const getLeavePayment = (leaveRequestId: number) =>
 
 export const downloadLeavePaymentEop = (leaveRequestId: number) =>
   api.get<Blob>(`/leave/${leaveRequestId}/payment/eop`, { responseType: 'blob' });
+
+export const downloadHandoverNote = (leaveRequestId: number) =>
+  api.get<Blob>(`/leave/${leaveRequestId}/handover-note`, { responseType: 'blob' });
 
 // -------------------------------------------------------
 // APPROVER (Unit Head / Div Head)
@@ -109,9 +115,10 @@ export const processEop = (id: number, accountNote: string, eopDocument: File) =
   );
 };
 
-export const replaceEopDocument = (id: number, eopDocument: File) => {
+export const replaceEopDocument = (id: number, accountNote?: string, eopDocument?: File) => {
   const form = new FormData();
-  form.append('eopDocument', eopDocument);
+  form.append('data', new Blob([JSON.stringify({ accountNote })], { type: 'application/json' }));
+  if (eopDocument) form.append('eopDocument', eopDocument);
   return api.post<LeavePaymentRequest>(
     `/leave/accounts/payment-requests/${id}/eop-document`, form,
     { headers: { 'Content-Type': 'multipart/form-data' } }

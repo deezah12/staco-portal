@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getPendingForApprover, getApprovalHistory, unitHeadReview, divHeadReview, hodConfirmResumption } from '../../api/leaveApi';
+import { getPendingForApprover, getApprovalHistory, unitHeadReview, divHeadReview, hodConfirmResumption, downloadHandoverNote } from '../../api/leaveApi';
 import { LeaveRequest, leaveTypeLabel } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { format } from 'date-fns';
@@ -43,6 +43,23 @@ const ApproverPending: React.FC = () => {
       toast.success('Resumption confirmed');
       setRequests(prev => prev.map(r => r.id === id ? { ...r, resumedConfirmedByHod: true } : r));
     } catch (err: any) { const _d = err.response?.data; toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed'); }
+  };
+
+  const handleDownloadHandover = async (request: LeaveRequest) => {
+    try {
+      const res = await downloadHandoverNote(request.id);
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = request.handoverNoteFileName || 'handover-note';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      const _d = err.response?.data;
+      toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed to download handover note');
+    }
   };
 
   if (loading) return <div className="loading"><div className="spinner"/></div>;
@@ -152,7 +169,11 @@ const ApproverPending: React.FC = () => {
                 {format(new Date(reviewing.startDate), 'dd MMM')} – {format(new Date(reviewing.endDate), 'dd MMM yyyy')} · {reviewing.totalDays} days
               </div>
               <div style={{ fontSize: 13, marginTop: 6 }}>Relief: <strong>{reviewing.reliefStaffName}</strong></div>
-              {reviewing.handoverNoteFileName && <div style={{ fontSize: 12, color: '#4f9cff', marginTop: 4 }}>📎 {reviewing.handoverNoteFileName}</div>}
+              {reviewing.handoverNoteFileName && (
+                <button className="btn btn-outline btn-sm" style={{ marginTop: 8 }} onClick={() => handleDownloadHandover(reviewing)}>
+                  Download Handover: {reviewing.handoverNoteFileName}
+                </button>
+              )}
             </div>
             <div className="form-group">
               <label>Comment (optional)</label>

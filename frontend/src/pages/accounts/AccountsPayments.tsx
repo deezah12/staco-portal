@@ -41,15 +41,15 @@ const AccountsPayments: React.FC = () => {
   };
 
   const handleReplaceEop = async () => {
-    if (!replacing || !eopFile) { toast.error('Please upload the EOP document'); return; }
+    if (!replacing) return;
     setSubmitting(true);
     try {
-      await replaceEopDocument(replacing.id, eopFile);
+      await replaceEopDocument(replacing.id, note, eopFile || undefined);
       await refreshQueues();
-      toast.success('EOP document updated');
-      setReplacing(null); setEopFile(null);
+      toast.success('Payment details updated');
+      setReplacing(null); setEopFile(null); setNote('');
     } catch (err: any) {
-      const _d = err.response?.data; toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed to update EOP');
+      const _d = err.response?.data; toast.error(typeof _d === 'string' ? _d : _d?.error || 'Failed to update payment details');
     } finally { setSubmitting(false); }
   };
 
@@ -145,8 +145,8 @@ const AccountsPayments: React.FC = () => {
                   <span style={{ padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: '#dcfce7', color: '#16a34a' }}>
                     {p.status}
                   </span>
-                  <button className="btn btn-outline btn-sm" onClick={() => { setReplacing(p); setEopFile(null); }}>
-                    Replace EOP
+                  <button className="btn btn-outline btn-sm" onClick={() => { setReplacing(p); setEopFile(null); setNote(p.accountNote || ''); }}>
+                    Edit
                   </button>
                 </div>
               </div>
@@ -199,14 +199,14 @@ const AccountsPayments: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h2>Replace EOP — {replacing.employee.fullName}</h2>
+              <h2>Edit Payment — {replacing.employee.fullName}</h2>
               <button className="modal-close" onClick={() => setReplacing(null)}>✕</button>
             </div>
             <div style={{ background: '#f8fafc', borderRadius: 8, padding: 14, marginBottom: 16 }}>
               <div style={{ fontSize: 13, color: '#64748b' }}>Current document: {replacing.eopDocumentFileName || 'None'}</div>
             </div>
             <div className="form-group">
-              <label>Upload EOP Document <span style={{ color: '#ef4444' }}>*</span></label>
+              <label>Replace EOP Document (optional)</label>
               <div style={{ border: `2px dashed ${eopFile ? '#22c55e' : '#cbd5e1'}`,
                 borderRadius: 10, padding: '16px', textAlign: 'center',
                 background: eopFile ? '#f0fdf4' : '#f8fafc', cursor: 'pointer' }}>
@@ -220,9 +220,13 @@ const AccountsPayments: React.FC = () => {
                 </label>
               </div>
             </div>
+            <div className="form-group">
+              <label>Account Note</label>
+              <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Payment reference or note..." style={{ resize: 'vertical' }} />
+            </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-primary" onClick={handleReplaceEop} disabled={submitting || !eopFile}>
-                {submitting ? 'Updating...' : '✅ Update EOP'}
+              <button className="btn btn-primary" onClick={handleReplaceEop} disabled={submitting}>
+                {submitting ? 'Saving...' : '✅ Save Changes'}
               </button>
               <button className="btn btn-outline" onClick={() => setReplacing(null)}>Cancel</button>
             </div>

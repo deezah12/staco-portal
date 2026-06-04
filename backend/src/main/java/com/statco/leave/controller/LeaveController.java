@@ -48,6 +48,11 @@ public class LeaveController {
         return ResponseEntity.ok(leaveService.getMyRequests(getUser(auth)));
     }
 
+    @GetMapping("/relief-staff")
+    public ResponseEntity<?> reliefStaff(Authentication auth) {
+        return ResponseEntity.ok(leaveService.getReliefStaffOptions(getUser(auth)));
+    }
+
     @PostMapping("/{id}/cancel")
     public ResponseEntity<?> cancel(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(leaveService.cancelLeave(id, getUser(auth)));
@@ -66,6 +71,16 @@ public class LeaveController {
     @GetMapping("/{id}/payment/eop")
     public ResponseEntity<Resource> downloadEop(@PathVariable Long id, Authentication auth) {
         Path path = leaveService.getEopDocumentPath(id, getUser(auth));
+        Resource resource = new FileSystemResource(path);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName() + "\"")
+                .body(resource);
+    }
+
+    @GetMapping("/{id}/handover-note")
+    public ResponseEntity<Resource> downloadHandoverNote(@PathVariable Long id, Authentication auth) {
+        Path path = leaveService.getHandoverNotePath(id, getUser(auth));
         Resource resource = new FileSystemResource(path);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -186,8 +201,9 @@ public class LeaveController {
     @PreAuthorize("hasRole('ACCOUNT')")
     public ResponseEntity<?> replaceEopDocument(
             @PathVariable Long id,
-            @RequestPart("eopDocument") MultipartFile eopDocument,
+            @RequestPart(value = "data", required = false) Dto.EopProcessRequest dto,
+            @RequestPart(value = "eopDocument", required = false) MultipartFile eopDocument,
             Authentication auth) {
-        return ResponseEntity.ok(leaveService.replaceEopDocument(id, getUser(auth), eopDocument));
+        return ResponseEntity.ok(leaveService.replaceEopDocument(id, getUser(auth), dto, eopDocument));
     }
 }
