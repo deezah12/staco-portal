@@ -62,6 +62,11 @@ public class LeaveController {
         return ResponseEntity.ok(leaveService.getPendingForApprover(getUser(auth)));
     }
 
+    @GetMapping("/approver/history")
+    public ResponseEntity<?> approvalHistory(Authentication auth) {
+        return ResponseEntity.ok(leaveService.getApprovalHistory(getUser(auth)));
+    }
+
     @PostMapping("/{id}/unit-head-review")
     public ResponseEntity<?> unitHeadReview(
             @PathVariable Long id,

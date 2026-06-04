@@ -349,6 +349,14 @@ public class LeaveService {
         return leaveRepo.findByStatusAndDepartment(targetStatus, approver.getDepartment());
     }
 
+    public List<LeaveRequest> getApprovalHistory(User approver) {
+        return switch (approver.getApprovalLevel()) {
+            case UNIT_HEAD -> leaveRepo.findUnitHeadHistory(approver);
+            case DIV_HEAD  -> leaveRepo.findDivHeadHistory(approver);
+            default        -> throw new RuntimeException("You have no approval authority");
+        };
+    }
+
     public List<LeaveRequest> getPendingHr() {
         return leaveRepo.findByStatusOrderByCreatedAtAsc(LeaveRequest.Status.PENDING_HR);
     }

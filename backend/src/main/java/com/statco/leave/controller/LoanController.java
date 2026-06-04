@@ -88,6 +88,11 @@ public class LoanController {
         return ResponseEntity.ok(loanService.getPendingForApprover(getUser(auth)));
     }
 
+    @GetMapping("/approver/history")
+    public ResponseEntity<?> approvalHistory(Authentication auth) {
+        return ResponseEntity.ok(loanService.getApprovalHistory(getUser(auth)));
+    }
+
     @PostMapping("/{id}/unit-head-review")
     public ResponseEntity<?> unitHeadReview(@PathVariable Long id,
                                              @Valid @RequestBody LoanDto.LoanApprovalRequest dto,

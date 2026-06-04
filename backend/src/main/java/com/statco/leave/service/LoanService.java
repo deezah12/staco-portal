@@ -488,6 +488,15 @@ public class LoanService {
         return loanRepo.findByStatusAndDepartment(targetStatus, approver.getDepartment());
     }
 
+    public List<LoanRequest> getApprovalHistory(User approver) {
+        return switch (approver.getApprovalLevel()) {
+            case UNIT_HEAD -> loanRepo.findUnitHeadHistory(approver);
+            case DIV_HEAD  -> loanRepo.findDivHeadHistory(approver);
+            case MD        -> loanRepo.findMdHistory(approver);
+            default        -> throw new RuntimeException("You have no loan approval authority");
+        };
+    }
+
     public List<LoanRequest> getPendingHr() {
         return loanRepo.findByStatusOrderByCreatedAtDesc(LoanRequest.LoanStatus.APPROVED);
     }
