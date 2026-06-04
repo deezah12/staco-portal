@@ -461,12 +461,18 @@ public class LoanService {
         return loanRepo.findByEmployeeIdOrderByCreatedAtDesc(employee.getId());
     }
 
-    public List<LoanGuarantor> getMyGuarantorRequests(User user) {
-        return guarantorRepo.findByGuarantorOrderByInvitedAtDesc(user);
+    public List<LoanDto.LoanGuarantorResponse> getMyGuarantorRequests(User user) {
+        return guarantorRepo.findByGuarantorOrderByInvitedAtDesc(user)
+                .stream()
+                .map(LoanDto.LoanGuarantorResponse::from)
+                .toList();
     }
 
-    public List<LoanGuarantor> getMyPendingGuarantorRequests(User user) {
-        return guarantorRepo.findByGuarantorAndStatusOrderByInvitedAtDesc(user, LoanGuarantor.GuarantorStatus.PENDING);
+    public List<LoanDto.LoanGuarantorResponse> getMyPendingGuarantorRequests(User user) {
+        return guarantorRepo.findByGuarantorAndStatusOrderByInvitedAtDesc(user, LoanGuarantor.GuarantorStatus.PENDING)
+                .stream()
+                .map(LoanDto.LoanGuarantorResponse::from)
+                .toList();
     }
 
     public List<LoanRequest> getPendingForApprover(User approver) {
