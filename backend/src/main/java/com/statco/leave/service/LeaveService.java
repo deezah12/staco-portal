@@ -5,6 +5,7 @@ import com.statco.leave.model.*;
 import com.statco.leave.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +29,12 @@ public class LeaveService {
     private final UserRepository userRepo;
     private final EmailService emailService;
 
-    private static final String UPLOAD_DIR = "uploads/handover-notes/";
-    private static final String EOP_DIR    = "uploads/eop-documents/";
+    private static final String HANDOVER_DIR = "handover-notes";
+    private static final String EOP_DIR      = "eop-documents";
     private static final int    PAID_LEAVE_MIN_DAYS = 10;
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadRootDir;
 
     // -------------------------------------------------------
     // EMPLOYEE: Apply for leave
@@ -53,7 +57,7 @@ public class LeaveService {
         validateBalance(balance, dto.getLeaveType(), days);
 
         // Save handover note file
-        String filePath = saveFile(handoverNote, UPLOAD_DIR);
+        String filePath = saveFile(handoverNote, HANDOVER_DIR);
 
         // Build leave request
         LeaveRequest request = new LeaveRequest();
@@ -393,7 +397,7 @@ public class LeaveService {
         if (payment.getEopDocumentPath() == null || payment.getEopDocumentPath().isBlank()) {
             throw new RuntimeException("EOP document has not been uploaded");
         }
-        Path path = Paths.get(payment.getEopDocumentPath());
+        Path path = resolveStoredFilePath(payment.getEopDocumentPath());
         if (!Files.exists(path)) {
             throw new RuntimeException("EOP document file not found");
         }
@@ -516,15 +520,39 @@ public class LeaveService {
 
     private String saveFile(MultipartFile file, String directory) {
         try {
-            Path uploadPath = Paths.get(directory);
+            Path uploadPath = getUploadRoot().resolve(directory).normalize();
             Files.createDirectories(uploadPath);
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            return filePath.toString();
+            return filePath.toAbsolutePath().normalize().toString();
         } catch (Exception e) {
             throw new RuntimeException("Failed to save file: " + e.getMessage());
         }
+    }
+
+    private Path resolveStoredFilePath(String storedPath) {
+        Path path = Paths.get(storedPath);
+        if (path.isAbsolute() || Files.exists(path)) {
+            return path.normalize();
+        }
+
+        Path uploadRoot = getUploadRoot();
+        Path rootedPath = uploadRoot.resolve(storedPath).normalize();
+        if (Files.exists(rootedPath)) {
+            return rootedPath;
+        }
+
+        if (storedPath.startsWith("uploads/") || storedPath.startsWith("uploads\\")) {
+            String withoutLegacyRoot = storedPath.substring("uploads/".length());
+            return uploadRoot.resolve(withoutLegacyRoot).normalize();
+        }
+
+        return rootedPath;
+    }
+
+    private Path getUploadRoot() {
+        return Paths.get(uploadRootDir).toAbsolutePath().normalize();
     }
 
     private void validatePaymentAccess(LeavePaymentRequest payment, User user) {
