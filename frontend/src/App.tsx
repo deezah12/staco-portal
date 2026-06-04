@@ -27,6 +27,7 @@ import AdminLoans from './pages/admin/AdminLoans';
 import AdminPerformance from './pages/admin/AdminPerformance';
 import AdminReports from './pages/admin/Adminreports';
 import StaffManagement from './pages/admin/Staffmanagement';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import ManagerPerformance from './pages/manager/ManagerPerformance';
 
 // Accounts
@@ -95,6 +96,7 @@ const AppRoutes = () => {
                 <Route path="/admin/performance"   element={<AdminPerformance />} />
                 <Route path="/admin/reports"       element={<AdminReports />} />
                 <Route path="/admin/staff"         element={<StaffManagement />} />
+                <Route path="/admin/announcements" element={<AdminAnnouncements />} />
             </Route>
 
             {/* Accounts routes */}

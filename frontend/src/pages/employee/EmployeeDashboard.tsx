@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMyRequests, getMyBalance } from '../../api/leaveApi';
 import { getProfile } from '../../api/staffApi';
+import { Announcement, getAnnouncements } from '../../api/announcementApi';
 import { LeaveRequest, LeaveBalance, leaveTypeLabel, statusLabel, statusBadgeClass } from '../../types';
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
@@ -20,14 +21,16 @@ const EmployeeDashboard: React.FC = () => {
     const [requests, setRequests] = useState<LeaveRequest[]>([]);
     const [balance, setBalance] = useState<LeaveBalance | null>(null);
     const [profile, setProfile] = useState<any>(null);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([getMyRequests(), getMyBalance(), getProfile()])
-            .then(([r, b, p]) => {
+        Promise.all([getMyRequests(), getMyBalance(), getProfile(), getAnnouncements().catch(() => ({ data: [] }))])
+            .then(([r, b, p, a]) => {
                 setRequests(r.data);
                 setBalance(b.data);
                 setProfile(p.data);
+                setAnnouncements(Array.isArray(a.data) ? a.data : []);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -151,25 +154,24 @@ const EmployeeDashboard: React.FC = () => {
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>Announcements</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {[
-                            { icon: '📢', iconBg: '#ede9fe', iconColor: '#7c3aed', title: 'Public Holiday', body: 'Eid-el-Kabir holiday on June 6, 2025.', date: 'May 15, 2025' },
-                            { icon: '🔔', iconBg: '#dcfce7', iconColor: '#16a34a', title: 'System Maintenance', body: 'System will be offline on May 25, 2025 from 10PM – 2AM.', date: 'May 12, 2025' },
-                            { icon: 'ℹ️', iconBg: '#fef3c7', iconColor: '#d97706', title: 'New Leave Policy', body: 'Please review the updated leave policy document.', date: 'May 8, 2025' },
-                        ].map((a, i) => (
+                        {announcements.slice(0, 3).map((a, i) => (
                             <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: a.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                                    {a.icon}
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: a.pinned ? '#fef3c7' : '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                                    {a.pinned ? '📌' : '📢'}
                                 </div>
                                 <div>
                                     <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a', marginBottom: 2 }}>{a.title}</div>
                                     <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 4 }}>{a.body}</div>
-                                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{a.date}</div>
+                                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{format(new Date(a.createdAt), 'MMM d, yyyy')}</div>
                                 </div>
                             </div>
                         ))}
+                        {announcements.length === 0 && (
+                            <div style={{ fontSize: 13, color: '#64748b' }}>No announcements at the moment.</div>
+                        )}
                     </div>
                     <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
-                        <span style={{ fontSize: 13, color: '#7c3aed', fontWeight: 600, cursor: 'pointer' }}>View all announcements →</span>
+                        <span style={{ fontSize: 13, color: '#7c3aed', fontWeight: 600 }}>{announcements.length} announcement{announcements.length !== 1 ? 's' : ''}</span>
                     </div>
                 </div>
 

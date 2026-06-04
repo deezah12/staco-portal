@@ -44,6 +44,7 @@ const Sidebar: React.FC = () => {
                     <NavLink to="/admin/dashboard">📊 Dashboard</NavLink>
                     <SectionLabel>Staff</SectionLabel>
                     <NavLink to="/admin/staff">👥 Staff Management</NavLink>
+                    <NavLink to="/admin/announcements">📢 Announcements</NavLink>
                     <SectionLabel>Leave</SectionLabel>
                     <NavLink to="/admin/requests">📋 All Leave Requests</NavLink>
                     <NavLink to="/admin/leave-process">⚙️ Process Leave</NavLink>

@@ -209,6 +209,19 @@ public class Dto {
         // eopDocument file is sent as MultipartFile alongside this DTO
     }
 
+    @Data
+    public static class AnnouncementRequest {
+        @NotBlank
+        @Size(max = 160)
+        private String title;
+        @NotBlank
+        @Size(max = 2000)
+        private String body;
+        private String department;
+        private boolean published = true;
+        private boolean pinned = false;
+    }
+
     // -------------------------------------------------------
     // User / Staff response — safe, proxy-free projection
     // -------------------------------------------------------

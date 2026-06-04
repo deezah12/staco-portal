@@ -204,7 +204,7 @@ const AdminDashboard: React.FC = () => {
                         {[
                             { icon:'👤', label:'Add Staff',        to:'/admin/staff',         bg:'bg-indigo' },
                             { icon:'📅', label:'Process Leave',    to:'/admin/process-leave', bg:'bg-green'  },
-                            { icon:'📢', label:'Announcement',     to:'/admin/staff',         bg:'bg-amber'  },
+                            { icon:'📢', label:'Announcement',     to:'/admin/announcements', bg:'bg-amber'  },
                             { icon:'🎓', label:'Assign Grade',     to:'/admin/staff',         bg:'bg-teal'   },
                             { icon:'📊', label:'Generate Report',  to:'/admin/reports',       bg:'bg-rose'   },
                             { icon:'✅', label:'Approve Requests', to:'/admin/pending',       bg:'bg-green'  },
