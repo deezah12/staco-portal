@@ -162,6 +162,12 @@ public class LoanController {
         return ResponseEntity.ok(loanService.getPendingAccounts());
     }
 
+    @GetMapping("/accounts/history")
+    @PreAuthorize("hasRole('ACCOUNT')")
+    public ResponseEntity<?> disbursementHistory(Authentication auth) {
+        return ResponseEntity.ok(loanService.getAccountDisbursementHistory(getUser(auth)));
+    }
+
     @PostMapping(value = "/accounts/{id}/disburse", consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ACCOUNT')")
     public ResponseEntity<?> disburse(@PathVariable Long id,

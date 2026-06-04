@@ -83,6 +83,9 @@ export const getLoanStats = () =>
 export const getPendingDisbursements = () =>
   api.get<LoanRequest[]>('/loans/accounts/pending');
 
+export const getDisbursementHistory = () =>
+  api.get<LoanRequest[]>('/loans/accounts/history');
+
 export const disburseLoan = (id: number, note: string, confirmation?: File) => {
   const form = new FormData();
   form.append('data', new Blob([JSON.stringify({ note })], { type: 'application/json' }));

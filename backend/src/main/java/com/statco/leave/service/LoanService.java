@@ -505,6 +505,13 @@ public class LoanService {
         return loanRepo.findByStatusOrderByCreatedAtDesc(LoanRequest.LoanStatus.PROCESSING);
     }
 
+    public List<LoanRequest> getAccountDisbursementHistory(User accountUser) {
+        if (accountUser.getRole() != User.Role.ACCOUNT) {
+            throw new RuntimeException("Only Accounts can view loan disbursement history");
+        }
+        return loanRepo.findByDisbursedByOrderByDisbursementDateDesc(accountUser);
+    }
+
     public List<LoanRequest> getAllLoans() {
         return loanRepo.findAllByOrderByCreatedAtDesc();
     }

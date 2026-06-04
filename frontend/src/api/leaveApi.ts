@@ -90,6 +90,9 @@ export const getDashboardStats = () =>
 export const getPendingPayments = () =>
   api.get<LeavePaymentRequest[]>('/leave/accounts/payment-requests');
 
+export const getPaymentHistory = () =>
+  api.get<LeavePaymentRequest[]>('/leave/accounts/payment-requests/history');
+
 export const processEop = (id: number, accountNote: string, eopDocument: File) => {
   const form = new FormData();
   form.append('data', new Blob([JSON.stringify({ accountNote })], { type: 'application/json' }));

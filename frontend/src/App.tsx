@@ -30,6 +30,7 @@ import StaffManagement from './pages/admin/Staffmanagement';
 import ManagerPerformance from './pages/manager/ManagerPerformance';
 
 // Accounts
+import AccountsDashboard from './pages/accounts/AccountsDashboard';
 import AccountsPayments from './pages/accounts/AccountsPayments';
 import AccountsLoans from './pages/accounts/AccountsLoans';
 
@@ -98,6 +99,7 @@ const AppRoutes = () => {
 
             {/* Accounts routes */}
             <Route element={<ProtectedRoute accountOnly><Layout /></ProtectedRoute>}>
+                <Route path="/accounts/dashboard" element={<AccountsDashboard />} />
                 <Route path="/accounts/payments" element={<AccountsPayments />} />
                 <Route path="/accounts/loans"    element={<AccountsLoans />} />
             </Route>

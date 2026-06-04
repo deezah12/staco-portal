@@ -145,6 +145,12 @@ public class LeaveController {
         return ResponseEntity.ok(leaveService.getPendingPayments());
     }
 
+    @GetMapping("/accounts/payment-requests/history")
+    @PreAuthorize("hasRole('ACCOUNT')")
+    public ResponseEntity<?> paymentHistory(Authentication auth) {
+        return ResponseEntity.ok(leaveService.getAccountPaymentHistory(getUser(auth)));
+    }
+
     @PostMapping(value = "/accounts/payment-requests/{id}/process-eop", consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ACCOUNT')")
     public ResponseEntity<?> processEop(

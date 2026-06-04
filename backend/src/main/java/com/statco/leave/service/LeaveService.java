@@ -374,6 +374,13 @@ public class LeaveService {
         return paymentRepo.findByStatusOrderByCreatedAtAsc(LeavePaymentRequest.PaymentStatus.PENDING);
     }
 
+    public List<LeavePaymentRequest> getAccountPaymentHistory(User accountUser) {
+        if (accountUser.getRole() != User.Role.ACCOUNT) {
+            throw new RuntimeException("Only Accounts staff can view payment history");
+        }
+        return paymentRepo.findByProcessedByAccountOrderByProcessedAtDesc(accountUser);
+    }
+
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalRequests", leaveRepo.count());

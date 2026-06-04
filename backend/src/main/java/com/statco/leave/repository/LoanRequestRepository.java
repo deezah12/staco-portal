@@ -38,6 +38,8 @@ public interface LoanRequestRepository extends JpaRepository<LoanRequest, Long> 
     @Query("SELECT l FROM LoanRequest l WHERE l.mdReviewer = :reviewer ORDER BY l.mdReviewedAt DESC")
     List<LoanRequest> findMdHistory(@Param("reviewer") User reviewer);
 
+    List<LoanRequest> findByDisbursedByOrderByDisbursementDateDesc(User accountUser);
+
     // Disbursed loans with overdue installments — for daily job
     @Query("SELECT DISTINCT l FROM LoanRequest l JOIN l.repayments r " +
            "WHERE l.status IN ('DISBURSED','OVERDUE') " +

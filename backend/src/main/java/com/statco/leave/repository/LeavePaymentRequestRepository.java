@@ -12,5 +12,7 @@ public interface LeavePaymentRequestRepository extends JpaRepository<LeavePaymen
 
     List<LeavePaymentRequest> findByEmployeeOrderByCreatedAtDesc(User employee);
 
+    List<LeavePaymentRequest> findByProcessedByAccountOrderByProcessedAtDesc(User accountUser);
+
     Optional<LeavePaymentRequest> findByLeaveRequestId(Long leaveRequestId);
 }
